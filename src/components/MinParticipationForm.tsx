@@ -57,7 +57,7 @@ export function MinParticipationForm({ initialPct }: MinParticipationFormProps) 
             step={1}
             value={value}
             onChange={(event) => setValue(event.target.value)}
-            className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-ink focus:ring-1 focus:ring-ink"
+            className="w-28 rounded-full border border-black/10 bg-[#f8f6fc] px-4 py-2 text-sm outline-none focus:border-ink/30 focus:bg-white"
           />
           <span className="text-sm text-muted">% of all issues per student</span>
         </div>
@@ -66,12 +66,12 @@ export function MinParticipationForm({ initialPct }: MinParticipationFormProps) 
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
       >
         {busy ? "Saving…" : "Update target"}
       </button>
 
-      {saved && !busy ? <p className="text-sm text-emerald-700">Target updated</p> : null}
+      {saved && !busy ? <p className="text-sm text-[#0d652d]">Target updated</p> : null}
       {error ? (
         <p role="alert" className="text-sm text-red-600">
           {error}

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SignOutIcon } from "@/components/Icons";
 import { errorMessage, postJson } from "@/components/post-json";
 
 export function SignOutButton() {
@@ -23,7 +24,7 @@ export function SignOutButton() {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       {error ? (
         <span role="alert" className="text-xs text-red-600">
           {error}
@@ -33,9 +34,11 @@ export function SignOutButton() {
         type="button"
         onClick={signOut}
         disabled={pending}
-        className="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium text-muted transition hover:bg-slate-100 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-60"
+        aria-label={pending ? "Signing out" : "Sign out"}
+        className="inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-ink/80 transition hover:bg-white/70 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-60"
       >
-        {pending ? "Signing out…" : "Sign out"}
+        <SignOutIcon />
+        <span className="hidden lg:inline">{pending ? "Signing out…" : "Sign out"}</span>
       </button>
     </div>
   );
