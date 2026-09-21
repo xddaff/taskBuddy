@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { signOut } from '@/lib/auth';
 import { conversationTitle, getSidebarData, getUnreadCounts } from '@/lib/data';
 import { Avatar } from './Avatar';
+import { NavLink } from './NavLink';
 
 interface Props {
   userId: string;
@@ -62,10 +63,7 @@ export async function Sidebar({ userId, userName, userImage }: Props) {
             <ul className="space-y-0.5">
               {directConversations.map((conversation) => (
                 <li key={conversation.id}>
-                  <Link
-                    href={`/c/${conversation.id}`}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-(--color-ink-muted) transition hover:bg-(--color-surface-hover) hover:text-(--color-ink)"
-                  >
+                  <NavLink href={`/c/${conversation.id}`}>
                     {conversation.type === 'DM' && conversation.members[0] ? (
                       <Avatar
                         name={conversation.members[0].user.name}
@@ -82,7 +80,7 @@ export async function Sidebar({ userId, userName, userImage }: Props) {
                     )}
                     <span className="flex-1 truncate">{conversationTitle(conversation)}</span>
                     <UnreadBadge count={unread.get(conversation.id)} />
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
             </ul>
@@ -98,25 +96,19 @@ export async function Sidebar({ userId, userName, userImage }: Props) {
             <ul className="space-y-0.5">
               {workspace.conversations.map((channel) => (
                 <li key={channel.id}>
-                  <Link
-                    href={`/c/${channel.id}`}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-(--color-ink-muted) transition hover:bg-(--color-surface-hover) hover:text-(--color-ink)"
-                  >
+                  <NavLink href={`/c/${channel.id}`}>
                     <span aria-hidden="true" className="text-(--color-ink-faint)">
                       #
                     </span>
                     <span className="flex-1 truncate">{channel.name}</span>
                     <UnreadBadge count={unread.get(channel.id)} />
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
 
               {workspace.documents.map((document) => (
                 <li key={document.id}>
-                  <Link
-                    href={`/d/${document.id}`}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-(--color-ink-muted) transition hover:bg-(--color-surface-hover) hover:text-(--color-ink)"
-                  >
+                  <NavLink href={`/d/${document.id}`} prefix>
                     <span
                       aria-hidden="true"
                       className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-(--color-surface-hover) text-[9px] text-(--color-ink-faint)"
@@ -124,7 +116,7 @@ export async function Sidebar({ userId, userName, userImage }: Props) {
                       {DOC_ICON[document.type] ?? 'D'}
                     </span>
                     <span className="flex-1 truncate">{document.title}</span>
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
             </ul>
@@ -132,12 +124,7 @@ export async function Sidebar({ userId, userName, userImage }: Props) {
         ))}
 
         <Section heading="Workspaces">
-          <Link
-            href="/w/new"
-            className="block rounded-md px-2 py-1.5 text-sm text-(--color-ink-muted) transition hover:bg-(--color-surface-hover) hover:text-(--color-ink)"
-          >
-            + New workspace
-          </Link>
+          <NavLink href="/w/new">+ New workspace</NavLink>
         </Section>
       </div>
 
@@ -180,13 +167,10 @@ function SidebarLink({
 }) {
   return (
     <li>
-      <Link
-        href={href}
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-(--color-ink-muted) transition hover:bg-(--color-surface-hover) hover:text-(--color-ink)"
-      >
+      <NavLink href={href} prefix={href === '/search' || href === '/mentions'}>
         <span className="flex-1">{label}</span>
         <UnreadBadge count={badge} />
-      </Link>
+      </NavLink>
     </li>
   );
 }
