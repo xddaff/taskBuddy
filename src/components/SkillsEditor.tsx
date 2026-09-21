@@ -72,7 +72,7 @@ export function SkillsEditor({ initialSkills, suggestions = [] }: SkillsEditorPr
   return (
     <div>
       <label htmlFor="skill-input" className="block text-sm font-medium">
-        Sources for your recommendations
+        Your skills and interests
       </label>
       <p className="mt-1 text-sm leading-relaxed text-muted">
         Type a skill and press Enter or comma to add it. Skills are matched against the labels on
@@ -113,7 +113,7 @@ export function SkillsEditor({ initialSkills, suggestions = [] }: SkillsEditorPr
 
       {unusedSuggestions.length > 0 ? (
         <div className="mt-5">
-          <p className="text-xs font-medium text-muted">Discover labels used in this project</p>
+          <p className="text-xs font-medium text-muted">Labels used in this project</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {unusedSuggestions.map((suggestion) => (
               <button
@@ -136,7 +136,7 @@ export function SkillsEditor({ initialSkills, suggestions = [] }: SkillsEditorPr
           disabled={busy}
           className="inline-flex items-center rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {busy ? "Saving…" : "Save sources"}
+          {busy ? "Saving…" : "Save skills"}
         </button>
         {saved && !busy ? <span className="text-sm text-[#0d652d]">Skills saved</span> : null}
         {error ? (

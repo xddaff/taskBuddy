@@ -1,15 +1,13 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BrandMark } from "@/components/BrandMark";
-import { FolderIcon } from "@/components/Icons";
 import { MinParticipationForm } from "@/components/MinParticipationForm";
 import { NavBar } from "@/components/NavBar";
+import { Pane } from "@/components/Pane";
 import { loadClassPlan } from "@/lib/plan-service";
 import { getCurrentStudent } from "@/lib/session";
 import { isMaintainer } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-const COVER = ["bg-mist/90", "bg-peach/90", "bg-sky/80", "bg-lilac/90", "bg-sand", "bg-lavender"];
 
 export default async function ClassPage() {
   const student = await getCurrentStudent();
@@ -29,33 +27,29 @@ export default async function ClassPage() {
   const shortOfTarget = plan.stats.filter((stat) => !stat.meetsTarget).length;
 
   return (
-    <div className="library-shell min-h-screen">
-      <NavBar student={student} active="class" title="Class notebooks" />
+    <div className="flex min-h-screen flex-col">
+      <NavBar student={student} active="class" />
 
-      <main className="mx-auto w-full max-w-6xl space-y-10 px-5 pb-16 pt-6 sm:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 p-3">
+        <div className="flex flex-wrap items-end justify-between gap-4 px-2 pt-2">
           <div>
-            <div className="mb-3 flex items-center gap-2 text-sm text-muted">
-              <BrandMark size="sm" />
-              Featured notebooks
-            </div>
-            <h2 className="text-3xl font-medium tracking-tight">Class overview</h2>
-            <p className="mt-2 text-sm text-muted">
+            <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">Class overview</h1>
+            <p className="mt-1 text-sm text-muted">
               {plan.stats.length} students · {plan.totalIssues} issues · {shortOfTarget} below the
               minimum
             </p>
           </div>
+          <Link
+            href="/dashboard"
+            className="text-sm font-medium text-ink underline underline-offset-4"
+          >
+            Back to dashboard
+          </Link>
         </div>
 
-        <section className="rounded-pane bg-paper p-5 shadow-pane sm:p-6">
-          <h3 className="text-sm font-medium">Studio settings</h3>
-          <p className="mt-1 text-sm text-muted">
-            Set the participation minimum every student notebook should reach.
-          </p>
-          <div className="mt-4">
-            <MinParticipationForm initialPct={config.minParticipationPct} />
-          </div>
-        </section>
+        <Pane title="Minimum participation">
+          <MinParticipationForm initialPct={config.minParticipationPct} />
+        </Pane>
 
         {!plan.feasible ? (
           <p
@@ -66,34 +60,6 @@ export default async function ClassPage() {
               "There are not enough open issues for every student to reach this minimum."}
           </p>
         ) : null}
-
-        <section>
-          <h3 className="text-lg font-medium tracking-tight">Recent notebooks</h3>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {plan.stats.map((stat, index) => (
-              <li
-                key={stat.gitlabUserId}
-                className={`rounded-[1.35rem] p-4 ${COVER[index % COVER.length]}`}
-              >
-                <FolderIcon />
-                <p className="mt-6 truncate text-[15px] font-medium">{stat.name}</p>
-                <p className="mt-1 text-xs text-muted">
-                  @{stat.username} · {stat.currentCount} assigned · {stat.pct}%
-                </p>
-                <p className="mt-3 text-xs font-medium">
-                  {stat.meetsTarget
-                    ? "Target met"
-                    : `${stat.need} more to reach ${stat.targetCount}`}
-                </p>
-              </li>
-            ))}
-            {plan.stats.length === 0 ? (
-              <li className="rounded-[1.35rem] border border-dashed border-black/15 bg-white px-4 py-10 text-center text-sm text-muted">
-                No class members yet. Sync from GitLab to pull in the project members.
-              </li>
-            ) : null}
-          </ul>
-        </section>
 
         <section className="overflow-hidden rounded-pane bg-paper shadow-pane">
           <div className="overflow-x-auto">
