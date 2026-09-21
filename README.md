@@ -61,9 +61,8 @@ issues are still spread as evenly as possible.
 | Route | Purpose |
 | --- | --- |
 | `/` | Sign in with GitLab, or pick a student in demo mode |
-| `/dashboard` | NotebookLM-style board: skills, chat under skills, recommendations, claimed issues |
+| `/dashboard` | NotebookLM-style board: skills, Class/Teacher chat under skills, recommendations, claimed issues |
 | `/profile` | Edit the skills and interests a student provides |
-| `/chat` | Full chat: students-only room, plus a class chat that includes the instructor |
 | `/shared` | Files students share with the class |
 | `/bureaucracy` | Official course documents; the instructor uploads, students download |
 | `/class` | Instructor only: set the minimum percentage, review the whole class |

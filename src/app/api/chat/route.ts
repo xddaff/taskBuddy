@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unknown chat room" }, { status: 400 });
   }
   if (!canAccessRoom(student, room)) {
-    return NextResponse.json({ error: "This room is private to students" }, { status: 403 });
+    return NextResponse.json({ error: "You cannot access this room" }, { status: 403 });
   }
 
   const messages = await listMessages(room);
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unknown chat room" }, { status: 400 });
   }
   if (!canAccessRoom(student, room)) {
-    return NextResponse.json({ error: "This room is private to students" }, { status: 403 });
+    return NextResponse.json({ error: "You cannot access this room" }, { status: 403 });
   }
 
   const body = typeof payload.body === "string" ? payload.body.trim() : "";

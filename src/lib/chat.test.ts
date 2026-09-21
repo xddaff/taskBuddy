@@ -21,50 +21,25 @@ const maintainer = student({
   accessLevel: ACCESS_LEVEL.MAINTAINER,
 });
 
-const owner = student({
-  gitlabUserId: 10,
-  username: "owner",
-  name: "Owner",
-  accessLevel: ACCESS_LEVEL.OWNER,
-});
+describe("rooms", () => {
+  it("exposes Class and Teacher rooms", () => {
+    expect(CHAT_ROOMS.map((room) => room.label)).toEqual(["Class", "Teacher"]);
+    expect(CHAT_ROOMS.map((room) => room.key)).toEqual(["students", "class"]);
+  });
 
-describe("canAccessRoom", () => {
-  it("lets a student into both rooms", () => {
+  it("lets students and instructors into both rooms", () => {
     expect(canAccessRoom(student(), "students")).toBe(true);
     expect(canAccessRoom(student(), "class")).toBe(true);
-  });
-
-  it("lets a maintainer into the class room but not the students room", () => {
+    expect(canAccessRoom(maintainer, "students")).toBe(true);
     expect(canAccessRoom(maintainer, "class")).toBe(true);
-    expect(canAccessRoom(maintainer, "students")).toBe(false);
   });
 
-  it("treats owners as instructors too", () => {
-    expect(canAccessRoom(owner, "class")).toBe(true);
-    expect(canAccessRoom(owner, "students")).toBe(false);
-  });
-});
-
-describe("roomsFor", () => {
-  it("returns both rooms for a student", () => {
-    expect(roomsFor(student()).map((room) => room.key)).toEqual(["students", "class"]);
+  it("returns both rooms for every signed-in member", () => {
+    expect(roomsFor(student()).map((room) => room.label)).toEqual(["Class", "Teacher"]);
+    expect(roomsFor(maintainer).map((room) => room.label)).toEqual(["Class", "Teacher"]);
   });
 
-  it("returns only the class room for a maintainer", () => {
-    expect(roomsFor(maintainer).map((room) => room.key)).toEqual(["class"]);
-  });
-
-  it("never returns a room the viewer cannot access", () => {
-    for (const viewer of [student(), maintainer, owner]) {
-      for (const room of roomsFor(viewer)) {
-        expect(canAccessRoom(viewer, room.key)).toBe(true);
-      }
-    }
-  });
-});
-
-describe("defaultRoomFor", () => {
-  it("opens the students room for students and the class room for instructors", () => {
+  it("opens Class for students and Teacher for instructors by default", () => {
     expect(defaultRoomFor(student())).toBe("students");
     expect(defaultRoomFor(maintainer)).toBe("class");
   });
