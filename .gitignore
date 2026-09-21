@@ -12,6 +12,8 @@ prisma/dev.db-journal
 *.db
 *.db-journal
 
+uploads/
+
 .DS_Store
 npm-debug.log*
 coverage/

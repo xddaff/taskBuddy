@@ -39,6 +39,34 @@ model Issue {
   recommendations Recommendation[]
 }
 
+model ChatMessage {
+  id             Int      @id @default(autoincrement())
+  room           String
+  gitlabUserId   Int
+  authorName     String
+  authorUsername String
+  body           String
+  createdAt      DateTime @default(now())
+
+  @@index([room, createdAt])
+}
+
+model Document {
+  id               Int      @id @default(autoincrement())
+  title            String
+  category         String
+  description      String   @default("")
+  originalName     String
+  storedName       String   @unique
+  mimeType         String   @default("application/octet-stream")
+  sizeBytes        Int      @default(0)
+  uploadedByUserId Int
+  uploadedByName   String
+  createdAt        DateTime @default(now())
+
+  @@index([category, createdAt])
+}
+
 model Recommendation {
   id           Int      @id @default(autoincrement())
   gitlabUserId Int
