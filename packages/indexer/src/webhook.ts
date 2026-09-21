@@ -1,7 +1,7 @@
 import { prisma } from '@studentproj/db';
 import { GitlabClient, type GitlabIssueEvent } from '@studentproj/gitlab';
-import { upsertIssue } from './issues.js';
-import { tagIdsBySlug } from './tags.js';
+import { upsertIssue } from './issues';
+import { tagIdsBySlug } from './tags';
 
 export interface WebhookResult {
   handled: boolean;

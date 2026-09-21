@@ -6,7 +6,7 @@
 /// indexer so the tags, scores and reasons on screen are produced by the same
 /// code path a real crawl would use.
 
-import './env.js';
+import './env';
 import { prisma, type Commitment, type Experience } from '@studentproj/db';
 import type { GitlabIssue, GitlabProject } from '@studentproj/gitlab';
 import { refreshAllRecommendations, syncTaxonomy, upsertProjectWithIssues } from '@studentproj/indexer';

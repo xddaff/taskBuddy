@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GitlabClient, GitlabError } from './client.js';
-import { computeProjectHealth } from './health.js';
-import type { GitlabIssue } from './types.js';
+import { GitlabClient, GitlabError } from './client';
+import { computeProjectHealth } from './health';
+import type { GitlabIssue } from './types';
 
 function jsonResponse(body: unknown, headers: Record<string, string> = {}, status = 200): Response {
   return new Response(JSON.stringify(body), {

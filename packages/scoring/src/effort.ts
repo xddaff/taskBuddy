@@ -1,4 +1,4 @@
-import { clamp01 } from './vector.js';
+import { clamp01 } from './vector';
 
 export type Commitment = 'CASUAL' | 'MODERATE' | 'SERIOUS';
 export type Experience = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';

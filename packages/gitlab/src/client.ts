@@ -3,7 +3,7 @@ import type {
   GitlabLanguages,
   GitlabProject,
   GitlabUser,
-} from './types.js';
+} from './types';
 
 export class GitlabError extends Error {
   constructor(

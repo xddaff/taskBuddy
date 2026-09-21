@@ -1,6 +1,6 @@
 import { prisma } from '@studentproj/db';
 import { crawlGroups, parseGroupList, refreshAllRecommendations, syncTaxonomy } from '@studentproj/indexer';
-import { env } from './env.js';
+import { env } from './env';
 
 const log = (message: string) => console.log(`[worker] ${message}`);
 

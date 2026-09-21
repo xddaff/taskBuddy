@@ -4,7 +4,7 @@ import {
   readConversationContext,
   suggestTasksForConversation,
   type SuggestionCandidate,
-} from './suggest.js';
+} from './suggest';
 
 const NOW = new Date('2026-09-21T12:00:00Z');
 const daysAgo = (days: number) => new Date(NOW.getTime() - days * 86_400_000);

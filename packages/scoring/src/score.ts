@@ -8,9 +8,9 @@ import {
   taskHourBudget,
   type Commitment,
   type Experience,
-} from './effort.js';
-import { tagLabel } from './taxonomy.js';
-import { clamp01, cosineSimilarity, overlappingTags, toVector, type WeightedTag } from './vector.js';
+} from './effort';
+import { tagLabel } from './taxonomy';
+import { clamp01, cosineSimilarity, overlappingTags, toVector, type WeightedTag } from './vector';
 
 /// Factor weights. Exported so they can be tuned in one place, and so tests
 /// can assert the contract that they sum to 1 rather than silently drifting.

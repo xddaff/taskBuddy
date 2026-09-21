@@ -5,10 +5,10 @@ import {
   effortFit,
   freshness,
   taskHourBudget,
-} from './effort.js';
-import { FACTOR_WEIGHTS, rankIssuesForProfile, scoreIssueForProfile } from './score.js';
-import { cosineSimilarity, toVector } from './vector.js';
-import type { IssueInput, ProfileInput } from './score.js';
+} from './effort';
+import { FACTOR_WEIGHTS, rankIssuesForProfile, scoreIssueForProfile } from './score';
+import { cosineSimilarity, toVector } from './vector';
+import type { IssueInput, ProfileInput } from './score';
 
 const NOW = new Date('2026-09-21T12:00:00Z');
 const daysAgo = (days: number) => new Date(NOW.getTime() - days * 86_400_000);

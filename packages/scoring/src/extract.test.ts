@@ -4,7 +4,7 @@ import {
   extractIssueTags,
   extractTextTags,
   normalize,
-} from './extract.js';
+} from './extract';
 
 const slugs = (tags: Array<{ slug: string }>) => tags.map((tag) => tag.slug);
 

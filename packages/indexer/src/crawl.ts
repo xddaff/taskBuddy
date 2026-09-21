@@ -1,6 +1,6 @@
 import { GitlabClient, GitlabError } from '@studentproj/gitlab';
-import { syncTaxonomy } from './tags.js';
-import { upsertProjectWithIssues } from './issues.js';
+import { syncTaxonomy } from './tags';
+import { upsertProjectWithIssues } from './issues';
 
 export interface CrawlOptions {
   baseUrl: string;

@@ -6,7 +6,7 @@ import {
   type GitlabProject,
 } from '@studentproj/gitlab';
 import { deriveEstimatedHours, extractIssueTags } from '@studentproj/scoring';
-import { tagIdsBySlug } from './tags.js';
+import { tagIdsBySlug } from './tags';
 
 export interface UpsertProjectInput {
   project: GitlabProject;

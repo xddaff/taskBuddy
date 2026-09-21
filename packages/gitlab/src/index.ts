@@ -1,6 +1,6 @@
-export * from './types.js';
-export * from './client.js';
-export * from './health.js';
+export * from './types';
+export * from './client';
+export * from './health';
 
 /// OAuth endpoints for a GitLab instance. Derived from the instance root
 /// rather than hardcoded, which is what lets the app point at a university

@@ -26,3 +26,6 @@ npm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+
+# Next.js generated artifacts
+next-env.d.ts

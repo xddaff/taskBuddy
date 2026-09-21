@@ -1,4 +1,4 @@
-import type { GitlabIssue } from './types.js';
+import type { GitlabIssue } from './types';
 
 export interface ProjectHealth {
   /// 0..1 rollup used by the projectHealth scoring factor.

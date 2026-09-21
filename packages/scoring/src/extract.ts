@@ -1,4 +1,4 @@
-import { TAGS, type TagDefinition } from './taxonomy.js';
+import { TAGS, type TagDefinition } from './taxonomy';
 
 export type TagSource = 'LABEL' | 'LANGUAGE' | 'TITLE';
 

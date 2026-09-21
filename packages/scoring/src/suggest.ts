@@ -1,7 +1,7 @@
-import { extractConversationTags } from './extract.js';
-import { freshness } from './effort.js';
-import { tagLabel } from './taxonomy.js';
-import { clamp01, cosineSimilarity, overlappingTags, toVector } from './vector.js';
+import { extractConversationTags } from './extract';
+import { freshness } from './effort';
+import { tagLabel } from './taxonomy';
+import { clamp01, cosineSimilarity, overlappingTags, toVector } from './vector';
 
 export interface SuggestionCandidate {
   id: string;
