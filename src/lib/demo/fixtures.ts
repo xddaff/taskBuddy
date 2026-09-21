@@ -67,6 +67,7 @@ function demoIssue(
     labels,
     assigneeGitlabUserIds,
     webUrl: `https://gitlab.com/demo/course-project/-/issues/${iid}`,
+    categories: [],
   };
 }
 
@@ -86,4 +87,21 @@ export const DEMO_ISSUES: Issue[] = [
   demoIssue(13, "Rate limit the public API", ["backend", "security"], "opened", []),
   demoIssue(14, "Empty states for the issue list", ["frontend"], "opened", []),
   demoIssue(15, "Migrate uploads to object storage", ["backend", "database"], "opened", []),
+  // Unlabelled on purpose: these only get categories because the text is read.
+  demoIssue(
+    16,
+    "Users can paste script tags into their bio",
+    [],
+    "opened",
+    [],
+    "Sanitize the field before it is rendered; right now it is an xss hole.",
+  ),
+  demoIssue(
+    17,
+    "The class list query is slow",
+    [],
+    "opened",
+    [],
+    "Looks like an n+1: optimize it and add an index.",
+  ),
 ];

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { NavBar } from "@/components/NavBar";
 import { SkillsEditor } from "@/components/SkillsEditor";
+import { CATEGORY_SLUGS } from "@/lib/ai/taxonomy";
 import { ensureSeeded, listIssues } from "@/lib/repo";
 import { getCurrentStudent } from "@/lib/session";
 
@@ -13,6 +14,9 @@ export default async function ProfilePage() {
   await ensureSeeded();
   const issues = await listIssues();
   const projectLabels = [...new Set(issues.flatMap((issue) => issue.labels))].sort();
+  // Categories first: they are what the recommender matches on for every task,
+  // including the ones GitLab left unlabelled.
+  const suggestions = [...new Set([...CATEGORY_SLUGS, ...projectLabels])];
 
   return (
     <>
@@ -22,12 +26,13 @@ export default async function ProfilePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Skills</h1>
           <p className="mt-1 text-sm text-muted">
-            TaskBuddy ranks open issues higher when their GitLab labels match what you list here.
+            TaskBuddy categorizes every task for you, then ranks the ones whose categories and
+            GitLab labels match what you list here.
           </p>
         </div>
 
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <SkillsEditor initialSkills={student.skills} suggestions={projectLabels} />
+          <SkillsEditor initialSkills={student.skills} suggestions={suggestions} />
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

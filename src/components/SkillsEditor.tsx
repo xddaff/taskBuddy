@@ -75,9 +75,10 @@ export function SkillsEditor({ initialSkills, suggestions = [] }: SkillsEditorPr
         Your skills and interests
       </label>
       <p className="mt-1 text-sm text-muted">
-        Type a skill and press Enter or comma to add it. Skills are matched against the labels on
-        GitLab issues, so terms like <span className="font-medium text-ink">frontend</span> or{" "}
-        <span className="font-medium text-ink">testing</span> work best.
+        Type a skill and press Enter or comma to add it. Skills are matched against the categories
+        TaskBuddy assigns to each task, so terms like{" "}
+        <span className="font-medium text-ink">frontend</span> or{" "}
+        <span className="font-medium text-ink">security</span> work best.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white p-2 focus-within:border-ink focus-within:ring-1 focus-within:ring-ink">
@@ -114,7 +115,7 @@ export function SkillsEditor({ initialSkills, suggestions = [] }: SkillsEditorPr
       {unusedSuggestions.length > 0 ? (
         <div className="mt-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
-            Labels used in this project
+            Categories and labels used in this project
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {unusedSuggestions.map((suggestion) => (

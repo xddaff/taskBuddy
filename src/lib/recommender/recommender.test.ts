@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ACCESS_LEVEL, type Issue, type Student } from "@/lib/types";
+import { ACCESS_LEVEL, type Issue, type IssueCategory, type Student } from "@/lib/types";
 import { recommend, recommendationsForStudent } from "@/lib/recommender";
 import { describeReason, scoreIssueForStudent } from "@/lib/recommender/score";
 
@@ -21,8 +21,13 @@ function issue(overrides: Partial<Issue> & Pick<Issue, "iid">): Issue {
     labels: [],
     assigneeGitlabUserIds: [],
     webUrl: `https://gitlab.example.com/issues/${overrides.iid}`,
+    categories: [],
     ...overrides,
   };
+}
+
+function category(slug: IssueCategory["slug"]): IssueCategory {
+  return { slug, confidence: 1, evidence: [`label: ${slug}`] };
 }
 
 describe("scoreIssueForStudent", () => {
@@ -33,6 +38,34 @@ describe("scoreIssueForStudent", () => {
     );
     expect(result.matchedLabels).toEqual(["Docs", "Backend"]);
     expect(result.score).toBe(6);
+  });
+
+  it("awards 2 per AI-assigned category the student's skills cover", () => {
+    const result = scoreIssueForStudent(
+      student({ gitlabUserId: 1, username: "ana", skills: ["security", "docs"] }),
+      issue({ iid: 1, categories: [category("security"), category("testing")] }),
+    );
+    expect(result.matchedCategories).toEqual(["security"]);
+    expect(result.score).toBe(2);
+  });
+
+  it("matches a category through its aliases", () => {
+    const result = scoreIssueForStudent(
+      student({ gitlabUserId: 1, username: "ana", skills: ["a11y"] }),
+      issue({ iid: 1, categories: [category("accessibility")] }),
+    );
+    expect(result.matchedCategories).toEqual(["accessibility"]);
+    expect(result.score).toBe(2);
+  });
+
+  it("pays a skill once when a label and a category carry the same name", () => {
+    const result = scoreIssueForStudent(
+      student({ gitlabUserId: 1, username: "ana", skills: ["backend"] }),
+      issue({ iid: 1, labels: ["backend"], categories: [category("backend")] }),
+    );
+    expect(result.matchedLabels).toEqual(["backend"]);
+    expect(result.matchedCategories).toEqual([]);
+    expect(result.score).toBe(3);
   });
 
   it("awards 1 per whole-word text match that is not already a label match", () => {
@@ -55,7 +88,7 @@ describe("scoreIssueForStudent", () => {
         student({ gitlabUserId: 1, username: "ana", skills: ["rust"] }),
         issue({ iid: 1, title: "Write docs", labels: ["docs"] }),
       ),
-    ).toEqual({ score: 0, matchedLabels: [] });
+    ).toEqual({ score: 0, matchedLabels: [], matchedCategories: [] });
     expect(
       scoreIssueForStudent(
         student({ gitlabUserId: 2, username: "bea" }),
@@ -69,6 +102,16 @@ describe("describeReason", () => {
   it("lists matched labels, falling back to the quota explanation", () => {
     expect(describeReason(["a", "b"], 25)).toBe("Matches labels: a, b");
     expect(describeReason([], 25)).toBe("Needed to reach 25% participation");
+  });
+
+  it("names the matched categories, alone or alongside labels", () => {
+    expect(describeReason([], 25, ["security"])).toBe("Matches category: Security");
+    expect(describeReason([], 25, ["security", "backend"])).toBe(
+      "Matches categories: Security, Backend",
+    );
+    expect(describeReason(["ui"], 25, ["frontend"])).toBe(
+      "Matches labels: ui · category: Frontend",
+    );
   });
 });
 
@@ -86,6 +129,23 @@ describe("recommend", () => {
         rank: 1,
         score: 3,
         reason: "Matches labels: backend",
+      },
+    ]);
+  });
+
+  it("prefers an AI-categorized issue over an unlabelled, uncategorized one", () => {
+    const plan = recommend({
+      students: [student({ gitlabUserId: 1, username: "ana", skills: ["security"] })],
+      issues: [issue({ iid: 1 }), issue({ iid: 2, categories: [category("security")] })],
+      minParticipationPct: 50,
+    });
+    expect(plan.recommendations).toEqual([
+      {
+        gitlabUserId: 1,
+        issueIid: 2,
+        rank: 1,
+        score: 2,
+        reason: "Matches category: Security",
       },
     ]);
   });
