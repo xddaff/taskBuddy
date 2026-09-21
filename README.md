@@ -19,39 +19,50 @@ Three things in one app:
 ## Requirements
 
 - Node.js 22 or newer
-- pnpm 10
-- PostgreSQL 16 (Docker Compose provides it, or use a local install)
+- pnpm 10 (`corepack enable` then `corepack prepare pnpm@10 --activate`, or `npm i -g pnpm`)
+- PostgreSQL 16 — **Docker is optional.** On a Mac, Homebrew Postgres is the usual path.
 
 ## Running it
 
 ```bash
 pnpm install
-cp .env.example .env          # then generate the secrets, see below
-docker compose up -d          # Postgres on :5432
-pnpm db:migrate               # apply the schema
-pnpm db:seed                  # demo students, projects, issues, chat, docs
-pnpm dev                      # web :3000, realtime :3001, worker
+cp .env.example .env
 ```
 
-Then open http://localhost:3000.
-
-Generate the two secrets `.env` needs:
+Put random values in `.env` for the two secrets:
 
 ```bash
-openssl rand -base64 32   # AUTH_SECRET
-openssl rand -base64 32   # TOKEN_ENCRYPTION_KEY
+openssl rand -base64 32   # paste into AUTH_SECRET
+openssl rand -base64 32   # paste into TOKEN_ENCRYPTION_KEY
 ```
 
-### No Docker?
+Leave `ALLOW_DEV_LOGIN="true"` so you can sign in as a seeded student without GitLab OAuth.
 
-Postgres can be installed directly instead:
+Then:
 
 ```bash
-sudo apt-get install -y postgresql
-sudo pg_ctlcluster 16 main start
-sudo -u postgres psql -c "CREATE ROLE studentproj LOGIN PASSWORD 'studentproj' CREATEDB;"
-sudo -u postgres psql -c "CREATE DATABASE studentproj OWNER studentproj;"
+pnpm db:up                # starts Postgres (Homebrew if Docker is missing)
+pnpm db:migrate
+pnpm db:seed
+pnpm dev
 ```
+
+Open http://localhost:3000 and sign in as Ilya.
+
+`pnpm db:up` prefers Docker Compose when `docker` exists. If it does not — which is the case on a machine without Docker Desktop — it installs and starts `postgresql@16` via Homebrew, then creates the `studentproj` role and database.
+
+You can also do that by hand:
+
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+export PATH="$(brew --prefix postgresql@16)/bin:$PATH"
+
+psql postgres -c "CREATE ROLE studentproj LOGIN PASSWORD 'studentproj' CREATEDB;"
+createdb -O studentproj studentproj
+```
+
+If `psql`/`createdb` are not found, the `export PATH=...` line is the missing piece; Homebrew does not put PostgreSQL 16 on PATH by default.
 
 ## Signing in
 
@@ -156,6 +167,7 @@ get finished, whereas one under budget just means picking up another.
 | `pnpm dev` | Runs web, realtime and worker together |
 | `pnpm test` | Unit tests across all packages (75 currently) |
 | `pnpm typecheck` | Typechecks every package |
+| `pnpm db:up` | Starts Postgres (Docker if present, otherwise Homebrew) |
 | `pnpm db:migrate` | Applies migrations |
 | `pnpm db:seed` | Loads demo data |
 | `pnpm db:studio` | Prisma Studio |
