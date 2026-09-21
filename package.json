@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "concurrently -n web,realtime,worker -c cyan,magenta,yellow \"pnpm -F @studentproj/web dev\" \"pnpm -F @studentproj/realtime dev\" \"pnpm -F @studentproj/worker dev\"",
     "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "db:generate": "pnpm -F @studentproj/db generate",
