@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AppConfig {
+  id                   Int     @id @default(1)
+  gitlabProjectId      String?
+  minParticipationPct  Int     @default(20)
+  updatedAt            DateTime @updatedAt
+}
+
+model Student {
+  gitlabUserId Int      @id
+  username     String   @unique
+  name         String
+  avatarUrl    String?
+  accessLevel  Int      @default(30)
+  skillsJson   String   @default("[]")
+  updatedAt    DateTime @updatedAt
+
+  recommendations Recommendation[]
+}
+
+model Issue {
+  iid           Int      @id
+  title         String
+  description   String   @default("")
+  state         String   @default("opened")
+  labelsJson    String   @default("[]")
+  assigneesJson String   @default("[]")
+  webUrl        String   @default("")
+  updatedAt     DateTime @updatedAt
+
+  recommendations Recommendation[]
+}
+
+model Recommendation {
+  id           Int      @id @default(autoincrement())
+  gitlabUserId Int
+  issueIid     Int
+  rank         Int
+  score        Float    @default(0)
+  reason       String   @default("")
+  createdAt    DateTime @default(now())
+
+  student Student @relation(fields: [gitlabUserId], references: [gitlabUserId], onDelete: Cascade)
+  issue   Issue   @relation(fields: [issueIid], references: [iid], onDelete: Cascade)
+
+  @@unique([gitlabUserId, issueIid])
+}
