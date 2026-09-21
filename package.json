@@ -15,7 +15,7 @@
     "db:generate": "pnpm -F @studentproj/db generate",
     "db:migrate": "pnpm -F @studentproj/db migrate",
     "db:push": "pnpm -F @studentproj/db push",
-    "db:seed": "pnpm -F @studentproj/db seed",
+    "db:seed": "pnpm -F @studentproj/worker seed",
     "db:studio": "pnpm -F @studentproj/db studio",
     "gitlab:index": "pnpm -F @studentproj/worker index"
   },

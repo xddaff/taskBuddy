@@ -18,6 +18,34 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  apps/worker:
+    dependencies:
+      '@studentproj/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@studentproj/gitlab':
+        specifier: workspace:*
+        version: link:../../packages/gitlab
+      '@studentproj/indexer':
+        specifier: workspace:*
+        version: link:../../packages/indexer
+      '@studentproj/scoring':
+        specifier: workspace:*
+        version: link:../../packages/scoring
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.1
+        version: 22.20.4
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.15
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   packages/db:
     dependencies:
       '@prisma/client':
@@ -33,6 +61,37 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.23.15
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/gitlab:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.1
+        version: 22.20.4
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.7(@types/node@22.20.4)(jiti@2.7.0)(tsx@4.23.15)
+
+  packages/indexer:
+    dependencies:
+      '@studentproj/db':
+        specifier: workspace:*
+        version: link:../db
+      '@studentproj/gitlab':
+        specifier: workspace:*
+        version: link:../gitlab
+      '@studentproj/scoring':
+        specifier: workspace:*
+        version: link:../scoring
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.1
+        version: 22.20.4
       typescript:
         specifier: ^5.7.3
         version: 5.9.3

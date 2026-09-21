@@ -58,18 +58,24 @@ export function deriveEstimatedHours(input: {
   return null;
 }
 
-/// Scored on the log of the ratio, so being 2x out costs the same whether the
-/// task is 2h against a 1h budget or 40h against 20h. Both directions are
-/// penalised: an oversized task is discouraging, and an undersized one is not
-/// worth a semester of someone's attention.
+/// Octaves of tolerance before effort fit reaches zero.
+///
+/// Asymmetric on purpose. A task well over budget may never get finished, which
+/// is the failure this whole feature exists to prevent. A task under budget is
+/// merely small: the student finishes it and picks up another. So oversized
+/// tasks are penalised harder than undersized ones.
+const OVERSIZED_TOLERANCE = 3;
+const UNDERSIZED_TOLERANCE = 4.5;
+
+/// Scored on the log of the estimate/budget ratio, so being 2x out costs the
+/// same whether the task is 2h against a 1h budget or 40h against 20h.
 export function effortFit(estimatedHours: number | null, budgetHours: number): number {
   if (estimatedHours === null || estimatedHours <= 0) return 0.5;
   if (budgetHours <= 0) return 0.5;
 
-  const ratio = estimatedHours / budgetHours;
-  const octaves = Math.abs(Math.log2(ratio));
-  // 3 octaves out (8x too big or too small) scores zero.
-  return clamp01(1 - octaves / 3);
+  const octaves = Math.log2(estimatedHours / budgetHours);
+  const tolerance = octaves >= 0 ? OVERSIZED_TOLERANCE : UNDERSIZED_TOLERANCE;
+  return clamp01(1 - Math.abs(octaves) / tolerance);
 }
 
 export function difficultyFit(

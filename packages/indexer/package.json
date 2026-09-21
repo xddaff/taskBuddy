@@ -1,5 +1,5 @@
 {
-  "name": "@studentproj/db",
+  "name": "@studentproj/indexer",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,20 +9,15 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "generate": "prisma generate",
-    "migrate": "prisma migrate deploy",
-    "migrate:dev": "prisma migrate dev",
-    "reset": "prisma migrate reset --force",
-    "studio": "prisma studio",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^6.3.1"
+    "@studentproj/db": "workspace:*",
+    "@studentproj/gitlab": "workspace:*",
+    "@studentproj/scoring": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",
-    "prisma": "^6.3.1",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
 }

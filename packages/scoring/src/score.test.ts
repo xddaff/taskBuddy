@@ -94,13 +94,20 @@ describe('effort fitting', () => {
     expect(effortFit(5, 10)).toBeLessThan(1);
   });
 
-  it('penalises oversized and undersized tasks symmetrically', () => {
-    expect(effortFit(20, 10)).toBeCloseTo(effortFit(5, 10), 10);
+  it('penalises an oversized task harder than an equally undersized one', () => {
+    // Both are one octave from the budget, but a task twice your budget may
+    // never get finished, whereas half your budget just means doing two.
+    expect(effortFit(5, 10)).toBeGreaterThan(effortFit(20, 10));
   });
 
   it('bottoms out beyond eight times the budget', () => {
     expect(effortFit(80, 10)).toBe(0);
     expect(effortFit(200, 10)).toBe(0);
+  });
+
+  it('keeps a small task usable rather than writing it off', () => {
+    // 4x under budget still beats the neutral score given to unknown effort.
+    expect(effortFit(2.5, 10)).toBeGreaterThan(0.5);
   });
 
   it('stays neutral when effort is unknown rather than guessing', () => {

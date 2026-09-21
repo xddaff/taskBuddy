@@ -1,0 +1,26 @@
+{
+  "name": "@studentproj/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts serve",
+    "start": "tsx src/main.ts serve",
+    "index": "tsx src/main.ts index",
+    "recommend": "tsx src/main.ts recommend",
+    "seed": "tsx src/seed.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@studentproj/db": "workspace:*",
+    "@studentproj/gitlab": "workspace:*",
+    "@studentproj/indexer": "workspace:*",
+    "@studentproj/scoring": "workspace:*",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
