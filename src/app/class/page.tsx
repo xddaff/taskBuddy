@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MinParticipationForm } from "@/components/MinParticipationForm";
 import { NavBar } from "@/components/NavBar";
+import { Pane } from "@/components/Pane";
 import { loadClassPlan } from "@/lib/plan-service";
 import { getCurrentStudent } from "@/lib/session";
 import { isMaintainer } from "@/lib/types";
@@ -26,13 +27,13 @@ export default async function ClassPage() {
   const shortOfTarget = plan.stats.filter((stat) => !stat.meetsTarget).length;
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       <NavBar student={student} active="class" />
 
-      <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 p-3">
+        <div className="flex flex-wrap items-end justify-between gap-4 px-2 pt-2">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Class overview</h1>
+            <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">Class overview</h1>
             <p className="mt-1 text-sm text-muted">
               {plan.stats.length} students · {plan.totalIssues} issues · {shortOfTarget} below the
               minimum
@@ -46,27 +47,27 @@ export default async function ClassPage() {
           </Link>
         </div>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Pane title="Minimum participation">
           <MinParticipationForm initialPct={config.minParticipationPct} />
-        </section>
+        </Pane>
 
         {!plan.feasible ? (
           <p
             role="alert"
-            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            className="rounded-pane border border-peach bg-peach/80 px-4 py-3 text-sm text-[#8c1d18]"
           >
             {plan.warning ??
               "There are not enough open issues for every student to reach this minimum."}
           </p>
         ) : null}
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-pane bg-paper shadow-pane">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[46rem] text-left text-sm">
               <caption className="sr-only">
                 Participation for every student in the course project
               </caption>
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-muted">
+              <thead className="border-b border-black/[0.06] bg-[#f8f6fc] text-xs text-muted">
                 <tr>
                   <th scope="col" className="px-6 py-3 font-medium">
                     Student
@@ -88,9 +89,9 @@ export default async function ClassPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-black/[0.04]">
                 {plan.stats.map((stat) => (
-                  <tr key={stat.gitlabUserId} className="hover:bg-slate-50">
+                  <tr key={stat.gitlabUserId} className="hover:bg-[#f8f6fc]">
                     <th scope="row" className="px-6 py-4 font-normal">
                       <span className="block font-medium">{stat.name}</span>
                       <span className="block text-xs text-muted">@{stat.username}</span>
@@ -99,9 +100,7 @@ export default async function ClassPage() {
                     <td className="px-6 py-4 text-right tabular-nums">
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                          stat.meetsTarget
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-amber-50 text-amber-700"
+                          stat.meetsTarget ? "bg-mist text-[#0d652d]" : "bg-sand text-[#8a5a00]"
                         }`}
                       >
                         {stat.pct}%
@@ -128,6 +127,6 @@ export default async function ClassPage() {
           </div>
         </section>
       </main>
-    </>
+    </div>
   );
 }

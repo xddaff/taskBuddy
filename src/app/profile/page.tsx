@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { NavBar } from "@/components/NavBar";
+import { Pane } from "@/components/Pane";
 import { SkillsEditor } from "@/components/SkillsEditor";
 import { ensureSeeded, listIssues } from "@/lib/repo";
 import { getCurrentStudent } from "@/lib/session";
@@ -15,33 +16,34 @@ export default async function ProfilePage() {
   const projectLabels = [...new Set(issues.flatMap((issue) => issue.labels))].sort();
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       <NavBar student={student} active="profile" />
 
-      <main className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Skills</h1>
-          <p className="mt-1 text-sm text-muted">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-3 p-3 lg:flex-row lg:items-start">
+        <Pane title="Currently saved" className="w-full lg:max-w-xs">
+          <p className="text-sm leading-relaxed text-muted">
             TaskBuddy ranks open issues higher when their GitLab labels match what you list here.
           </p>
-        </div>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <SkillsEditor initialSkills={student.skills} suggestions={projectLabels} />
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-medium text-muted">Currently saved</h2>
           {student.skills.length > 0 ? (
-            <p className="mt-2 text-sm">{student.skills.join(", ")}</p>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {student.skills.map((skill) => (
+                <li key={skill} className="rounded-full bg-lavender px-2 py-0.5 text-[11px] font-medium text-[#4a3c7a]">
+                  {skill}
+                </li>
+              ))}
+            </ul>
           ) : (
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-4 text-sm text-muted">
               Nothing saved yet. Without skills you still get recommendations, but they are picked
               only to close your participation gap.
             </p>
           )}
-        </section>
+        </Pane>
+
+        <Pane title="Skills" className="w-full flex-1">
+          <SkillsEditor initialSkills={student.skills} suggestions={projectLabels} />
+        </Pane>
       </main>
-    </>
+    </div>
   );
 }

@@ -1,10 +1,19 @@
 import type { Student } from "@/lib/types";
 
 const SIZES = {
-  sm: "h-8 w-8 text-xs",
+  sm: "h-9 w-9 text-xs",
   md: "h-10 w-10 text-sm",
   lg: "h-14 w-14 text-lg",
 } as const;
+
+const PALETTE = [
+  "bg-[#e8710a] text-white",
+  "bg-[#0b57d0] text-white",
+  "bg-[#0d9c57] text-white",
+  "bg-[#c5221f] text-white",
+  "bg-[#9334e6] text-white",
+  "bg-[#007b83] text-white",
+];
 
 type AvatarProps = {
   student: Pick<Student, "name" | "username" | "avatarUrl">;
@@ -18,8 +27,16 @@ function initialsOf(name: string, username: string): string {
   return letters || "?";
 }
 
+function colorFor(username: string): string {
+  let hash = 0;
+  for (let i = 0; i < username.length; i += 1) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return PALETTE[Math.abs(hash) % PALETTE.length];
+}
+
 export function Avatar({ student, size = "md" }: AvatarProps) {
-  const base = `${SIZES[size]} shrink-0 rounded-full object-cover ring-1 ring-slate-200`;
+  const base = `${SIZES[size]} shrink-0 rounded-full object-cover`;
 
   if (student.avatarUrl) {
     // Remote GitLab avatar hosts are not declared in next.config, so next/image is unusable here.
@@ -30,7 +47,7 @@ export function Avatar({ student, size = "md" }: AvatarProps) {
   return (
     <span
       aria-hidden
-      className={`${base} flex items-center justify-center bg-slate-100 font-semibold text-muted`}
+      className={`${base} flex items-center justify-center font-semibold ${colorFor(student.username)}`}
     >
       {initialsOf(student.name, student.username)}
     </span>

@@ -37,7 +37,7 @@ export function DemoLoginList({ students }: DemoLoginListProps) {
               type="button"
               onClick={() => signIn(student.username)}
               disabled={pendingUsername !== null}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center gap-3 rounded-2xl bg-[#f8f6fc] p-4 text-left transition hover:bg-lavender/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Avatar student={student} />
               <span className="min-w-0">

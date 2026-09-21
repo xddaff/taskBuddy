@@ -198,4 +198,16 @@ export async function resetDemoData(): Promise<void> {
   await prisma.student.deleteMany();
   await upsertStudents(DEMO_STUDENTS);
   await upsertIssues(DEMO_ISSUES);
+  await prisma.appConfig.upsert({
+    where: { id: 1 },
+    update: {
+      gitlabProjectId: GITLAB_PROJECT_ID || null,
+      minParticipationPct: DEFAULT_MIN_PARTICIPATION_PCT,
+    },
+    create: {
+      id: 1,
+      gitlabProjectId: GITLAB_PROJECT_ID || null,
+      minParticipationPct: DEFAULT_MIN_PARTICIPATION_PCT,
+    },
+  });
 }

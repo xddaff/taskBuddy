@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+import { BrandMark } from "@/components/BrandMark";
 import { SignOutButton } from "@/components/SignOutButton";
 import { SyncButton } from "@/components/SyncButton";
 import { isMaintainer, type Student } from "@/lib/types";
@@ -23,13 +24,14 @@ export function NavBar({ student, active }: NavBarProps) {
   const links = LINKS.filter((link) => !link.maintainerOnly || isMaintainer(student));
 
   return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-4 px-4 py-4 sm:px-6 lg:px-8">
+    <header className="px-3 pt-3 sm:px-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-2 py-1">
         <Link
           href="/dashboard"
-          className="text-base font-semibold tracking-tight focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+          className="flex shrink-0 items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
         >
-          TaskBuddy
+          <BrandMark size="sm" />
+          <span className="text-[17px] font-medium tracking-tight">TaskBuddy</span>
         </Link>
 
         <nav aria-label="Main" className="flex items-center gap-1">
@@ -38,10 +40,10 @@ export function NavBar({ student, active }: NavBarProps) {
               key={link.key}
               href={link.href}
               aria-current={link.key === active ? "page" : undefined}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+              className={`rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                 link.key === active
-                  ? "bg-slate-100 text-ink"
-                  : "text-muted hover:bg-slate-50 hover:text-ink"
+                  ? "bg-white text-ink shadow-chip"
+                  : "text-ink/70 hover:bg-white/70 hover:text-ink"
               }`}
             >
               {link.label}
@@ -49,11 +51,11 @@ export function NavBar({ student, active }: NavBarProps) {
           ))}
         </nav>
 
-        <div className="ml-auto flex flex-wrap items-center gap-3">
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <SyncButton />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pl-1">
             <Avatar student={student} size="sm" />
-            <span className="text-sm font-medium">{student.name}</span>
+            <span className="hidden text-sm font-medium sm:inline">{student.name}</span>
           </div>
           <SignOutButton />
         </div>

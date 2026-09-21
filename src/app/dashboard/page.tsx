@@ -2,13 +2,30 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { IssueCard } from "@/components/IssueCard";
 import { NavBar } from "@/components/NavBar";
+import { Pane } from "@/components/Pane";
 import { ParticipationMeter } from "@/components/ParticipationMeter";
 import { issuesByIid, loadClassPlan } from "@/lib/plan-service";
 import { recommendationsForStudent } from "@/lib/recommender";
 import { getCurrentStudent } from "@/lib/session";
-import { isMaintainer } from "@/lib/types";
+import { isMaintainer, type ClassPlan, type ParticipationStat } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+function emptyRecommendationCopy(
+  plan: ClassPlan,
+  stat: ParticipationStat | null,
+): string {
+  if (!stat) {
+    return "Instructors are not part of the recommendation pool. Open the class view to track students.";
+  }
+  if (stat.meetsTarget) {
+    return `Nothing left to recommend: you already have ${stat.currentCount} of ${stat.totalIssues} issues, which meets the ${plan.minParticipationPct}% minimum.`;
+  }
+  if (plan.warning) {
+    return `No issues were left for you after filling larger participation gaps. ${plan.warning}`;
+  }
+  return "There are no open, unassigned issues left to recommend right now. Sync from GitLab to pull in new ones.";
+}
 
 export default async function DashboardPage() {
   const student = await getCurrentStudent();
@@ -29,59 +46,70 @@ export default async function DashboardPage() {
   );
 
   return (
-    <>
+    <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
       <NavBar student={student} active="dashboard" />
 
-      <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{student.name}</h1>
-          <p className="mt-1 text-sm text-muted">
+      <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(13rem,18%)_minmax(0,1fr)_minmax(16rem,24%)] lg:grid-rows-1">
+        <div className="flex min-h-0 flex-col gap-3 lg:min-h-0">
+          {stat ? (
+            <div className="rounded-pane bg-paper p-4 shadow-pane">
+              <ParticipationMeter stat={stat} minParticipationPct={config.minParticipationPct} />
+            </div>
+          ) : (
+            <Pane title="Your participation" className="shrink-0">
+              <p className="text-sm leading-relaxed text-muted">
+                Instructors are not part of the participation quota.
+                {isMaintainer(student) ? (
+                  <>
+                    {" "}
+                    <Link href="/class" className="font-medium text-ink underline underline-offset-4">
+                      Open the class view
+                    </Link>{" "}
+                    to set the minimum and track everyone.
+                  </>
+                ) : null}
+              </p>
+            </Pane>
+          )}
+
+          <section className="shrink-0 rounded-pane bg-paper px-4 py-3 shadow-pane">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xs font-medium tracking-tight text-ink">Skills</h2>
+              <Link
+                href="/profile"
+                className="rounded-full px-2 py-0.5 text-[11px] font-medium text-muted hover:bg-black/[0.04] hover:text-ink"
+              >
+                Edit
+              </Link>
+            </div>
             {student.skills.length > 0 ? (
-              <>Matching issues against your skills: {student.skills.join(", ")}.</>
+              <ul className="mt-2 flex flex-wrap gap-1">
+                {student.skills.map((skill) => (
+                  <li
+                    key={skill}
+                    className="rounded-full bg-lavender px-2 py-0.5 text-[11px] font-medium text-[#4a3c7a]"
+                  >
+                    {skill}
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <>
-                You have not listed any skills yet.{" "}
-                <Link href="/profile" className="font-medium text-ink underline underline-offset-4">
-                  Add them
-                </Link>{" "}
-                for better recommendations.
-              </>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                None yet.{" "}
+                <Link href="/profile" className="font-medium text-ink underline underline-offset-2">
+                  Add skills
+                </Link>
+              </p>
             )}
-          </p>
+          </section>
         </div>
 
-        {stat ? (
-          <ParticipationMeter stat={stat} minParticipationPct={config.minParticipationPct} />
-        ) : (
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-medium text-muted">Your participation</h2>
-            <p className="mt-2 text-sm">
-              Instructors are not part of the participation quota.
-              {isMaintainer(student) ? (
-                <>
-                  {" "}
-                  <Link href="/class" className="font-medium text-ink underline underline-offset-4">
-                    Open the class view
-                  </Link>{" "}
-                  to set the minimum and track everyone.
-                </>
-              ) : null}
-            </p>
-          </section>
-        )}
-
-        <section aria-labelledby="recommended-heading">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="recommended-heading" className="text-lg font-semibold">
-              Recommended for you
-            </h2>
-            <p className="text-sm text-muted">
-              {recommended.length} {recommended.length === 1 ? "issue" : "issues"}
-            </p>
-          </div>
-
+        <Pane title="Recommended for you" className="min-h-[24rem] lg:min-h-0">
+          <p className="mb-4 text-sm text-muted">
+            {recommended.length} {recommended.length === 1 ? "issue" : "issues"}
+          </p>
           {recommended.length > 0 ? (
-            <ul className="mt-4 grid gap-4 md:grid-cols-2">
+            <ul className="space-y-3">
               {recommended.map(({ recommendation, issue }) => (
                 <li key={issue.iid}>
                   <IssueCard
@@ -94,35 +122,28 @@ export default async function DashboardPage() {
               ))}
             </ul>
           ) : (
-            <p className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-muted">
-              {plan.warning ??
-                (stat?.meetsTarget
-                  ? "Nothing left to recommend: you have already met the participation minimum."
-                  : "There are no open issues left to recommend right now. Sync from GitLab to pull in new ones.")}
+            <p className="rounded-2xl bg-[#f8f6fc] px-4 py-8 text-center text-sm text-muted">
+              {emptyRecommendationCopy(plan, stat)}
             </p>
           )}
-        </section>
+        </Pane>
 
-        <section aria-labelledby="assigned-heading">
-          <h2 id="assigned-heading" className="text-lg font-semibold">
-            Your issues
-          </h2>
+        <Pane title="Your issues" className="min-h-[18rem] lg:min-h-0">
           {assigned.length > 0 ? (
-            <ul className="mt-4 grid gap-4 md:grid-cols-2">
+            <ul className="space-y-3">
               {assigned.map((issue) => (
                 <li key={issue.iid}>
-                  <IssueCard issue={issue} assigned />
+                  <IssueCard issue={issue} assigned compact />
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-muted">
-              You have not claimed any issues yet. Claim one of the recommendations above to get
-              started.
+            <p className="rounded-2xl bg-[#f8f6fc] px-4 py-8 text-center text-sm text-muted">
+              You have not claimed any issues yet. Claim one of the recommendations to get started.
             </p>
           )}
-        </section>
+        </Pane>
       </main>
-    </>
+    </div>
   );
 }
