@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: studentproj
+          POSTGRES_PASSWORD: studentproj
+          POSTGRES_DB: studentproj
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U studentproj"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://studentproj:studentproj@localhost:5432/studentproj?schema=public
+      # Values only need to be well-formed for typechecking and migrations;
+      # nothing in CI authenticates against a real GitLab instance.
+      AUTH_SECRET: ci-auth-secret-not-used-for-anything-real
+      TOKEN_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      GITLAB_BASE_URL: https://gitlab.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The Prisma client is generated code that the typecheck depends on, so
+      # it has to exist before tsc runs.
+      - run: pnpm db:generate
+
+      # Migrations are applied so the schema is exercised on every change; the
+      # hand-written generated tsvector column would otherwise only be tested
+      # locally.
+      - run: pnpm db:migrate
+
+      - run: pnpm typecheck
+
+      - run: pnpm test

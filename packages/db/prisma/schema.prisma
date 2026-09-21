@@ -1,0 +1,605 @@
+// Student project platform schema.
+//
+// Two shapes here are load-bearing and worth reading first:
+//
+//   * Conversation carries a `type` of CHANNEL | DM | GROUP instead of there
+//     being a separate Channel table. Channels belong to a workspace, DMs and
+//     group chats do not. Everything downstream (delivery, unread counts,
+//     mentions, search, attachments) therefore has a single code path.
+//
+//   * Document holds both `contentJson` and a nullable `ydocState`, so moving
+//     to CRDT editing later is an additive change rather than a migration of
+//     existing document content.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  // GitLab identity. Nullable so seeded demo users exist without an account.
+  gitlabUserId Int?    @unique
+  gitlabUsername String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  profile  StudentProfile?
+
+  recommendations      Recommendation[]
+  workspaceMemberships WorkspaceMember[]
+  conversationMemberships ConversationMember[]
+  messages             Message[]
+  reactions            MessageReaction[]
+  mentions             Mention[]
+  attachments          Attachment[]
+  documentVersions     DocumentVersion[]
+  sectionLocks         DocumentSectionLock[]
+  suggestionDismissals SuggestionDismissal[]
+
+  @@index([gitlabUsername])
+}
+
+/// Auth.js account rows. `access_token` and `refresh_token` are stored
+/// encrypted by the web app before they reach this table.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Database-backed sessions. The realtime service authenticates socket
+/// connections by looking the session cookie up here, which avoids inventing a
+/// second auth mechanism for websockets.
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Student profile and the shared tag taxonomy
+// ---------------------------------------------------------------------------
+
+enum TagKind {
+  LANGUAGE
+  FRAMEWORK
+  TOOL
+  TOPIC
+  DOMAIN
+}
+
+/// One normalized vocabulary shared by student profiles, GitLab issues and
+/// chat message extraction. `aliases` is what lets "js", "node-js" and
+/// "JavaScript" all collapse onto one tag.
+model Tag {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  label     String
+  kind      TagKind
+  aliases   String[] @default([])
+  createdAt DateTime @default(now())
+
+  skills    ProfileSkill[]
+  interests ProfileInterest[]
+  issueTags IssueTag[]
+  signals   TagSignal[]
+
+  @@index([kind])
+}
+
+enum Commitment {
+  CASUAL
+  MODERATE
+  SERIOUS
+}
+
+enum Experience {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model StudentProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  /// Hours per week the student is willing to commit. This is the
+  /// "minimal contribution" input to effort scoring.
+  weeklyHours Int        @default(5)
+  commitment  Commitment @default(MODERATE)
+  experience  Experience @default(BEGINNER)
+  bio         String?
+  onboardedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills    ProfileSkill[]
+  interests ProfileInterest[]
+  signals   TagSignal[]
+}
+
+model ProfileSkill {
+  id        String @id @default(cuid())
+  profileId String
+  tagId     String
+  /// 1..5, self-reported. Feeds the student side of the tag vector.
+  proficiency Int  @default(3)
+
+  profile StudentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tag     Tag            @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, tagId])
+}
+
+model ProfileInterest {
+  id        String @id @default(cuid())
+  profileId String
+  tagId     String
+
+  profile StudentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tag     Tag            @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, tagId])
+}
+
+/// Accumulated implicit feedback per tag. Dismissing recommendations pushes
+/// the relevant tags negative; claiming pushes them positive.
+model TagSignal {
+  id        String   @id @default(cuid())
+  profileId String
+  tagId     String
+  weight    Float    @default(0)
+  updatedAt DateTime @updatedAt
+
+  profile StudentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tag     Tag            @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, tagId])
+}
+
+// ---------------------------------------------------------------------------
+// GitLab index
+// ---------------------------------------------------------------------------
+
+model GitlabProject {
+  id                String   @id @default(cuid())
+  gitlabId          Int      @unique
+  pathWithNamespace String   @unique
+  name              String
+  description       String?
+  webUrl            String
+  avatarUrl         String?
+  starCount         Int      @default(0)
+  lastActivityAt    DateTime?
+
+  /// Raw language percentages from GET /projects/:id/languages, e.g.
+  /// { "TypeScript": 72.1, "CSS": 18.4 }. Used as implicit skill tags.
+  languages Json?
+
+  openIssueCount     Int    @default(0)
+  medianIssueAgeDays Float?
+  /// 0..1 rollup of responsiveness and activity, used by projectHealth scoring.
+  healthScore        Float  @default(0.5)
+
+  indexedAt DateTime @default(now())
+
+  issues GitlabIssue[]
+}
+
+model GitlabIssue {
+  id        String @id @default(cuid())
+  gitlabId  Int    @unique
+  iid       Int
+  projectId String
+
+  title       String
+  description String?
+  state       String
+  webUrl      String
+  labels      String[] @default([])
+  weight      Int?
+  timeEstimateSeconds Int?
+  assigneeCount Int     @default(0)
+  authorUsername String?
+
+  /// Effort in hours, derived from time_estimate when GitLab has one and from
+  /// issue weight otherwise. Nullable when neither signal is available.
+  estimatedHours Float?
+
+  gitlabCreatedAt DateTime
+  gitlabUpdatedAt DateTime
+  indexedAt       DateTime @default(now())
+
+  project         GitlabProject    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tags            IssueTag[]
+  recommendations Recommendation[]
+  dismissals      SuggestionDismissal[]
+
+  @@unique([projectId, iid])
+  @@index([state, gitlabUpdatedAt])
+}
+
+enum TagSource {
+  LABEL
+  LANGUAGE
+  TITLE
+}
+
+model IssueTag {
+  issueId String
+  tagId   String
+  weight  Float     @default(1)
+  source  TagSource
+
+  issue GitlabIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  tag   Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, tagId])
+  @@index([tagId])
+}
+
+enum RecommendationStatus {
+  SUGGESTED
+  SAVED
+  CLAIMED
+  DISMISSED
+}
+
+model Recommendation {
+  id      String @id @default(cuid())
+  userId  String
+  issueId String
+
+  score Float
+  /// Per-factor scores, kept so the UI can explain a ranking and so tuning
+  /// the weights does not require re-deriving everything.
+  breakdown Json
+  reasons   String[] @default([])
+
+  status      RecommendationStatus @default(SUGGESTED)
+  generatedAt DateTime             @default(now())
+  decidedAt   DateTime?
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  issue GitlabIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, issueId])
+  @@index([userId, status, score])
+}
+
+// ---------------------------------------------------------------------------
+// Workspaces
+// ---------------------------------------------------------------------------
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Workspace {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  createdById String
+
+  /// GitLab project ids this workspace is working on. Scopes the "related
+  /// tasks" suggestions in chat to work the team actually cares about.
+  gitlabProjectIds Int[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members       WorkspaceMember[]
+  conversations Conversation[]
+  documents     Document[]
+  invites       WorkspaceInvite[]
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model WorkspaceInvite {
+  id          String    @id @default(cuid())
+  workspaceId String
+  token       String    @unique
+  createdById String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  usedById    String?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Chat
+// ---------------------------------------------------------------------------
+
+enum ConversationType {
+  CHANNEL
+  DM
+  GROUP
+}
+
+enum ConversationRole {
+  OWNER
+  MEMBER
+}
+
+model Conversation {
+  id   String           @id @default(cuid())
+  type ConversationType
+
+  /// Set for CHANNEL, null for DM and GROUP. A DM is deliberately not scoped
+  /// to a workspace: students message each other about things that have no
+  /// channel yet, which is exactly what keeps them on WhatsApp otherwise.
+  workspaceId String?
+
+  name  String?
+  topic String?
+
+  /// Sorted "userIdA:userIdB" for 1:1 DMs. Unique, so opening a DM twice
+  /// resolves to the same conversation instead of creating a duplicate.
+  dmKey String? @unique
+
+  createdById   String
+  createdAt     DateTime  @default(now())
+  lastMessageAt DateTime?
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members   ConversationMember[]
+  messages  Message[]
+  dismissals SuggestionDismissal[]
+
+  @@index([workspaceId, type])
+  @@index([lastMessageAt])
+}
+
+model ConversationMember {
+  id             String           @id @default(cuid())
+  conversationId String
+  userId         String
+  role           ConversationRole @default(MEMBER)
+  muted          Boolean          @default(false)
+
+  /// Read state lives on the membership row rather than in its own table;
+  /// there is exactly one per member per conversation either way.
+  lastReadAt        DateTime?
+  lastReadMessageId String?
+
+  joinedAt DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+enum MessageKind {
+  TEXT
+  TASK_CARD
+  SYSTEM
+}
+
+model Message {
+  id             String @id @default(cuid())
+  conversationId String
+  authorId       String
+
+  body      String
+  kind      MessageKind @default(TEXT)
+  /// For TASK_CARD messages: the shared GitLab issue snapshot.
+  metadata  Json?
+
+  replyToId String?
+  editedAt  DateTime?
+  /// Soft delete, so replies pointing at this message keep their structure.
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  /// Generated tsvector maintained by Postgres, not by Prisma. See the
+  /// `search_vector` step in the initial migration.
+  searchVector Unsupported("tsvector")?
+
+  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  replyTo      Message?          @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[]         @relation("MessageReplies")
+  reactions    MessageReaction[]
+  mentions     Mention[]
+  attachments  Attachment[]
+
+  @@index([conversationId, createdAt])
+  @@index([authorId])
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
+
+model Mention {
+  id        String    @id @default(cuid())
+  messageId String
+  userId    String
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId, readAt])
+}
+
+model Attachment {
+  id String @id @default(cuid())
+
+  /// Null until the composing message is actually sent, so an upload can
+  /// complete before the user hits enter.
+  messageId  String?
+  uploaderId String
+
+  storageKey   String
+  filename     String
+  mimeType     String
+  byteSize     Int
+  width        Int?
+  height       Int?
+  thumbnailKey String?
+
+  createdAt DateTime @default(now())
+
+  message  Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploader User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+/// Per-conversation, per-user suppression of a suggested task, so the
+/// "related tasks" panel stops proposing something the team has rejected.
+model SuggestionDismissal {
+  id             String   @id @default(cuid())
+  conversationId String
+  issueId        String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  issue        GitlabIssue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, issueId, userId])
+}
+
+// ---------------------------------------------------------------------------
+// Workspace documents
+// ---------------------------------------------------------------------------
+
+enum DocumentType {
+  REPORT
+  PLAN
+  FREEFORM
+}
+
+model Document {
+  id          String       @id @default(cuid())
+  workspaceId String
+  type        DocumentType @default(FREEFORM)
+  title       String
+
+  /// ProseMirror JSON, the source of truth today.
+  contentJson Json?
+  /// Yjs document state. Populated only once CRDT editing is switched on;
+  /// its presence is what marks a document as migrated.
+  ydocState   Bytes?
+
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  versions  DocumentVersion[]
+  locks     DocumentSectionLock[]
+
+  @@index([workspaceId, type])
+}
+
+model DocumentVersion {
+  id          String   @id @default(cuid())
+  documentId  String
+  contentJson Json
+  authorId    String
+  label       String?
+  createdAt   DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, createdAt])
+}
+
+/// Advisory soft lock on a document section. Expires on a timer so a student
+/// closing their laptop mid-edit does not block the section permanently.
+model DocumentSectionLock {
+  id         String   @id @default(cuid())
+  documentId String
+  sectionId  String
+  userId     String
+  acquiredAt DateTime @default(now())
+  expiresAt  DateTime
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, sectionId])
+}
