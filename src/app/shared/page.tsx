@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { DocumentList } from "@/components/DocumentList";
 import { DocumentUploadForm } from "@/components/DocumentUploadForm";
 import { NavBar } from "@/components/NavBar";
+import { Pane } from "@/components/Pane";
 import {
   MAX_UPLOAD_BYTES,
   SHARED_CATEGORIES,
@@ -26,45 +27,36 @@ export default async function SharedFilesPage() {
   const documents = await listDocuments("shared");
 
   return (
-    <>
+    <div className="flex min-h-dvh flex-col">
       <NavBar student={student} active="shared" />
 
-      <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Shared files</h1>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 p-3">
+        <div className="px-2 pt-1">
+          <h1 className="text-2xl font-medium tracking-tight">Shared files</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted">
             A class dropbox for notes, resources, and anything else students want to pass around.
-            Anyone in the course can upload and download. You can edit or remove files you posted;
-            the instructor can moderate anything.
+            Anyone in the course can upload and download. Official paperwork stays on Bureaucracy.
           </p>
         </div>
 
-        <section
-          aria-labelledby="share-upload-heading"
-          className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
-          <h2 id="share-upload-heading" className="text-lg font-semibold">
-            Share a file
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            The class will see your name on the file. Official course paperwork still belongs on
-            the Bureaucracy tab.
+        <Pane title="Share a file">
+          <p className="mb-4 text-sm text-muted">
+            The class will see your name on the file. You can edit or remove what you posted; the
+            instructor can moderate anything.
           </p>
-          <div className="mt-5">
-            <DocumentUploadForm
-              endpoint="/api/shared-files"
-              categories={CATEGORY_OPTIONS}
-              accept={UPLOAD_ACCEPT}
-              maxBytes={MAX_UPLOAD_BYTES}
-              maxSizeLabel={formatFileSize(MAX_UPLOAD_BYTES)}
-              allowedTypesLabel={allowedTypesSummary()}
-              titlePlaceholder="e.g. Week 2 lecture notes"
-              descriptionPlaceholder="What classmates should know about this file"
-              submitLabel="Share file"
-              idPrefix="shared"
-            />
-          </div>
-        </section>
+          <DocumentUploadForm
+            endpoint="/api/shared-files"
+            categories={CATEGORY_OPTIONS}
+            accept={UPLOAD_ACCEPT}
+            maxBytes={MAX_UPLOAD_BYTES}
+            maxSizeLabel={formatFileSize(MAX_UPLOAD_BYTES)}
+            allowedTypesLabel={allowedTypesSummary()}
+            titlePlaceholder="e.g. Week 2 lecture notes"
+            descriptionPlaceholder="What classmates should know about this file"
+            submitLabel="Share file"
+            idPrefix="shared"
+          />
+        </Pane>
 
         <DocumentList
           documents={documents}
@@ -73,6 +65,6 @@ export default async function SharedFilesPage() {
           endpoint="/api/shared-files"
         />
       </main>
-    </>
+    </div>
   );
 }

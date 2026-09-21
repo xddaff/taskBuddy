@@ -60,7 +60,7 @@ export function DocumentList({
                 return (
                   <li
                     key={entry.id}
-                    className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                    className="rounded-pane bg-paper p-5 shadow-pane"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
@@ -79,7 +79,7 @@ export function DocumentList({
                       </div>
                       <a
                         href={`/api/documents/${entry.id}/download`}
-                        className="inline-flex shrink-0 items-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-ink transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                        className="inline-flex shrink-0 items-center rounded-full border border-black/[0.08] px-3 py-1.5 text-sm font-medium text-ink transition hover:bg-black/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
                       >
                         Download
                         <span className="sr-only"> {entry.title}</span>
@@ -98,7 +98,7 @@ export function DocumentList({
               })}
             </ul>
           ) : (
-            <p className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-muted">
+            <p className="mt-4 rounded-pane bg-[#f8f6fc] px-4 py-8 text-center text-sm text-muted">
               Nothing filed under {group.label.toLowerCase()} yet.
             </p>
           )}

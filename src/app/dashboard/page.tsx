@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ChatPanel } from "@/components/ChatPanel";
 import { IssueCard } from "@/components/IssueCard";
 import { NavBar } from "@/components/NavBar";
 import { Pane } from "@/components/Pane";
 import { ParticipationMeter } from "@/components/ParticipationMeter";
+import { defaultRoomFor, listMessages, roomsFor } from "@/lib/chat";
 import { issuesByIid, loadClassPlan } from "@/lib/plan-service";
 import { recommendationsForStudent } from "@/lib/recommender";
 import { getCurrentStudent } from "@/lib/session";
@@ -44,6 +46,9 @@ export default async function DashboardPage() {
   const assigned = issues.filter((issue) =>
     issue.assigneeGitlabUserIds.includes(student.gitlabUserId),
   );
+  const rooms = roomsFor(student);
+  const initialRoom = defaultRoomFor(student);
+  const initialMessages = await listMessages(initialRoom);
 
   return (
     <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
@@ -101,6 +106,27 @@ export default async function DashboardPage() {
                 </Link>
               </p>
             )}
+          </section>
+
+          <section className="flex min-h-[18rem] flex-1 flex-col overflow-hidden rounded-pane bg-paper shadow-pane lg:min-h-0">
+            <div className="flex items-center justify-between gap-2 px-4 pb-1 pt-3">
+              <h2 className="text-xs font-medium tracking-tight text-ink">Chat</h2>
+              <Link
+                href="/chat"
+                className="rounded-full px-2 py-0.5 text-[11px] font-medium text-muted hover:bg-black/[0.04] hover:text-ink"
+              >
+                Open
+              </Link>
+            </div>
+            <div className="min-h-0 flex-1">
+              <ChatPanel
+                rooms={rooms}
+                initialRoom={initialRoom}
+                initialMessages={initialMessages}
+                viewerUserId={student.gitlabUserId}
+                compact
+              />
+            </div>
           </section>
         </div>
 

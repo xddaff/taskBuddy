@@ -16,12 +16,12 @@ export default async function ChatPage() {
   const initialMessages = await listMessages(initialRoom);
 
   return (
-    <>
+    <div className="flex min-h-dvh flex-col">
       <NavBar student={student} active="chat" />
 
-      <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Chat</h1>
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-3 p-3">
+        <div className="px-2 pt-1">
+          <h1 className="text-2xl font-medium tracking-tight">Chat</h1>
           <p className="mt-1 text-sm text-muted">
             {isMaintainer(student) ? (
               <>
@@ -37,13 +37,15 @@ export default async function ChatPage() {
           </p>
         </div>
 
-        <ChatPanel
-          rooms={rooms}
-          initialRoom={initialRoom}
-          initialMessages={initialMessages}
-          viewerUserId={student.gitlabUserId}
-        />
+        <div className="min-h-[32rem] flex-1">
+          <ChatPanel
+            rooms={rooms}
+            initialRoom={initialRoom}
+            initialMessages={initialMessages}
+            viewerUserId={student.gitlabUserId}
+          />
+        </div>
       </main>
-    </>
+    </div>
   );
 }

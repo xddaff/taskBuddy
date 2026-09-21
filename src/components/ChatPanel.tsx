@@ -10,6 +10,7 @@ type ChatPanelProps = {
   initialRoom: ChatRoomKey;
   initialMessages: ChatMessageView[];
   viewerUserId: number;
+  compact?: boolean;
 };
 
 const POLL_INTERVAL_MS = 5000;
@@ -65,6 +66,7 @@ export function ChatPanel({
   initialRoom,
   initialMessages,
   viewerUserId,
+  compact = false,
 }: ChatPanelProps) {
   const [room, setRoom] = useState<ChatRoomKey>(initialRoom);
   const [messages, setMessages] = useState<ChatMessageView[]>(initialMessages);
@@ -141,9 +143,13 @@ export function ChatPanel({
   }, []);
 
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <section
+      className={`flex min-h-0 flex-col overflow-hidden bg-paper ${
+        compact ? "h-full" : "rounded-pane shadow-pane"
+      }`}
+    >
       {rooms.length > 1 ? (
-        <div className="flex items-center gap-1 border-b border-slate-200 px-4 py-3 sm:px-6">
+        <div className="flex items-center gap-1 px-3 pt-3 sm:px-4">
           <div role="group" aria-label="Chat rooms" className="flex items-center gap-1">
             {rooms.map((entry) => (
               <button
@@ -151,10 +157,10 @@ export function ChatPanel({
                 type="button"
                 aria-pressed={entry.key === room}
                 onClick={() => selectRoom(entry.key)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                className={`rounded-full px-3 py-1 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                   entry.key === room
-                    ? "bg-slate-100 text-ink"
-                    : "text-muted hover:bg-slate-50 hover:text-ink"
+                    ? "bg-white text-ink shadow-chip"
+                    : "text-ink/70 hover:bg-white/70 hover:text-ink"
                 }`}
               >
                 {entry.label}
@@ -164,13 +170,15 @@ export function ChatPanel({
         </div>
       ) : null}
 
-      <div className="border-b border-slate-200 px-4 py-3 sm:px-6">
-        <h2 className="text-sm font-semibold">{activeRoom.label}</h2>
-        <p className="mt-0.5 text-xs text-muted">{activeRoom.description}</p>
+      <div className="px-4 pb-1 pt-3">
+        <h2 className="text-[15px] font-medium tracking-tight text-ink">{activeRoom.label}</h2>
+        {compact ? null : (
+          <p className="mt-0.5 text-xs text-muted">{activeRoom.description}</p>
+        )}
       </div>
 
       {loadError ? (
-        <p role="alert" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 sm:px-6">
+        <p role="alert" className="mx-3 rounded-2xl bg-peach/80 px-3 py-2 text-sm text-[#8c1d18]">
           {loadError}
         </p>
       ) : null}
@@ -179,10 +187,11 @@ export function ChatPanel({
         messages={messages}
         viewerUserId={viewerUserId}
         loading={loading}
+        compact={compact}
         emptyLabel={`No messages in ${activeRoom.label.toLowerCase()} yet. Start the conversation.`}
       />
 
-      <ChatComposer key={room} roomLabel={activeRoom.label.toLowerCase()} onSend={send} />
+      <ChatComposer key={room} roomLabel={activeRoom.label.toLowerCase()} onSend={send} compact={compact} />
     </section>
   );
 }

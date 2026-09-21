@@ -10,9 +10,10 @@ const MESSAGE_MAX_LENGTH = 2000;
 type ChatComposerProps = {
   roomLabel: string;
   onSend: (body: string) => Promise<void>;
+  compact?: boolean;
 };
 
-export function ChatComposer({ roomLabel, onSend }: ChatComposerProps) {
+export function ChatComposer({ roomLabel, onSend, compact = false }: ChatComposerProps) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,29 +44,37 @@ export function ChatComposer({ roomLabel, onSend }: ChatComposerProps) {
   }
 
   return (
-    <div className="border-t border-slate-200 px-4 py-4 sm:px-6">
-      <label htmlFor="chat-composer" className="block text-sm font-medium">
-        Message {roomLabel}
-      </label>
-      <p className="mt-1 text-xs text-muted">Enter sends, Shift+Enter starts a new line.</p>
+    <div className="border-t border-black/[0.06] px-3 py-3 sm:px-4">
+      {compact ? (
+        <label htmlFor="chat-composer" className="sr-only">
+          Message {roomLabel}
+        </label>
+      ) : (
+        <>
+          <label htmlFor="chat-composer" className="block text-sm font-medium">
+            Message {roomLabel}
+          </label>
+          <p className="mt-1 text-xs text-muted">Enter sends, Shift+Enter starts a new line.</p>
+        </>
+      )}
 
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className={`${compact ? "" : "mt-3"} flex flex-col gap-2 sm:flex-row sm:items-end`}>
         <textarea
           id="chat-composer"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={onKeyDown}
-          rows={2}
+          rows={compact ? 1 : 2}
           disabled={sending}
-          placeholder="Write a message"
+          placeholder={compact ? "Write a message" : "Write a message"}
           aria-describedby={error ? "chat-composer-error" : undefined}
-          className="min-h-[3rem] flex-1 resize-y rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition placeholder:text-muted focus:border-ink focus:ring-1 focus:ring-ink disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-[2.5rem] flex-1 resize-none rounded-2xl border-0 bg-[#f8f6fc] px-3 py-2 text-sm outline-none transition placeholder:text-muted focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
         />
         <button
           type="button"
           onClick={send}
           disabled={!canSend}
-          className="inline-flex items-center justify-center rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-ink/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
         >
           {sending ? "Sending…" : "Send"}
         </button>

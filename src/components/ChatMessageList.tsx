@@ -9,6 +9,7 @@ type ChatMessageListProps = {
   viewerUserId: number;
   loading?: boolean;
   emptyLabel: string;
+  compact?: boolean;
 };
 
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
@@ -34,6 +35,7 @@ export function ChatMessageList({
   viewerUserId,
   loading = false,
   emptyLabel,
+  compact = false,
 }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastId = messages.length > 0 ? messages[messages.length - 1].id : 0;
@@ -50,10 +52,10 @@ export function ChatMessageList({
       aria-live="polite"
       aria-label="Messages"
       tabIndex={0}
-      className="h-[26rem] overflow-y-auto px-4 py-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:px-6"
+      className={`${compact ? "min-h-0 flex-1" : "h-[26rem]"} overflow-y-auto px-3 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:px-4`}
     >
       {messages.length === 0 ? (
-        <p className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-muted">
+        <p className="flex h-full items-center justify-center rounded-2xl bg-[#f8f6fc] px-4 py-8 text-center text-sm text-muted">
           {loading ? "Loading messages…" : emptyLabel}
         </p>
       ) : (
@@ -100,10 +102,8 @@ export function ChatMessageList({
                   ) : null}
 
                   <p
-                    className={`mt-1 inline-block whitespace-pre-wrap break-words rounded-xl px-3 py-2 text-left text-sm ring-1 ring-inset ${
-                      mine
-                        ? "bg-emerald-50 text-ink ring-emerald-200"
-                        : "bg-slate-50 text-ink ring-slate-200"
+                    className={`mt-1 inline-block whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-left text-sm ${
+                      mine ? "bg-mist text-ink" : "bg-[#f8f6fc] text-ink"
                     }`}
                   >
                     {message.body}

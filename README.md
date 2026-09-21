@@ -61,10 +61,10 @@ issues are still spread as evenly as possible.
 | Route | Purpose |
 | --- | --- |
 | `/` | Sign in with GitLab, or pick a student in demo mode |
-| `/profile` | The skills and interests a student provides |
-| `/dashboard` | Participation meter, recommended issues, claim, sync |
-| `/chat` | Two rooms: students-only, and a class chat that includes the instructor |
-| `/shared` | Files students share with the class; the uploader or instructor can edit or remove them |
+| `/dashboard` | NotebookLM-style board: skills, chat under skills, recommendations, claimed issues |
+| `/profile` | Edit the skills and interests a student provides |
+| `/chat` | Full chat: students-only room, plus a class chat that includes the instructor |
+| `/shared` | Files students share with the class |
 | `/bureaucracy` | Official course documents; the instructor uploads, students download |
 | `/class` | Instructor only: set the minimum percentage, review the whole class |
 
