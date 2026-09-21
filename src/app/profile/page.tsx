@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { NavBar } from "@/components/NavBar";
+import { Pane } from "@/components/Pane";
 import { SkillsEditor } from "@/components/SkillsEditor";
 import { ensureSeeded, listIssues } from "@/lib/repo";
 import { getCurrentStudent } from "@/lib/session";
@@ -15,33 +16,46 @@ export default async function ProfilePage() {
   const projectLabels = [...new Set(issues.flatMap((issue) => issue.labels))].sort();
 
   return (
-    <>
-      <NavBar student={student} active="profile" />
+    <div className="flex min-h-screen flex-col">
+      <NavBar student={student} active="profile" title="Skills and sources" />
 
-      <main className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Skills</h1>
-          <p className="mt-1 text-sm text-muted">
-            TaskBuddy ranks open issues higher when their GitLab labels match what you list here.
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-3 p-3 lg:flex-row lg:items-start">
+        <Pane title="Sources" className="w-full lg:max-w-sm">
+          <p className="text-sm leading-relaxed text-muted">
+            These skills are treated like notebook sources. TaskBuddy ranks open issues higher when
+            their GitLab labels match what you list here.
           </p>
-        </div>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <SkillsEditor initialSkills={student.skills} suggestions={projectLabels} />
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-medium text-muted">Currently saved</h2>
           {student.skills.length > 0 ? (
-            <p className="mt-2 text-sm">{student.skills.join(", ")}</p>
+            <ul className="mt-4 space-y-1">
+              {student.skills.map((skill) => (
+                <li
+                  key={skill}
+                  className="rounded-xl bg-[#f8f6fc] px-3 py-2 text-sm font-medium"
+                >
+                  {skill}
+                </li>
+              ))}
+            </ul>
           ) : (
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-6 rounded-2xl bg-[#f8f6fc] px-4 py-6 text-center text-sm text-muted">
               Nothing saved yet. Without skills you still get recommendations, but they are picked
               only to close your participation gap.
             </p>
           )}
-        </section>
+        </Pane>
+
+        <Pane title="Chat" className="w-full flex-1">
+          <div className="px-1 py-2">
+            <h2 className="text-[1.65rem] font-medium tracking-tight">Customize this notebook</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Add the languages, tools, and topics you want recommendations grounded in.
+            </p>
+            <div className="mt-6">
+              <SkillsEditor initialSkills={student.skills} suggestions={projectLabels} />
+            </div>
+          </div>
+        </Pane>
       </main>
-    </>
+    </div>
   );
 }

@@ -6,6 +6,29 @@
   color-scheme: light;
 }
 
+html,
 body {
-  @apply bg-slate-50 text-ink antialiased;
+  min-height: 100%;
+}
+
+body {
+  @apply bg-canvas text-ink antialiased;
+  font-family: var(--font-sans), "Segoe UI", system-ui, sans-serif;
+}
+
+::selection {
+  background: #d3e3fd;
+}
+
+.welcome-shell {
+  background:
+    radial-gradient(70% 42% at 38% 108%, rgba(168, 228, 196, 0.55), transparent 70%),
+    radial-gradient(55% 38% at 72% 112%, rgba(196, 178, 255, 0.5), transparent 68%),
+    #ffffff;
+}
+
+.library-shell {
+  background:
+    radial-gradient(60% 40% at 80% 0%, rgba(232, 222, 248, 0.7), transparent 55%),
+    #ffffff;
 }

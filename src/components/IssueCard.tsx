@@ -12,6 +12,7 @@ type IssueCardProps = {
   rank?: number;
   claimable?: boolean;
   assigned?: boolean;
+  variant?: "chat" | "note";
 };
 
 export function IssueCard({
@@ -20,6 +21,7 @@ export function IssueCard({
   rank,
   claimable = false,
   assigned = false,
+  variant = "chat",
 }: IssueCardProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -41,25 +43,54 @@ export function IssueCard({
 
   const busy = claiming || pending;
 
+  if (variant === "note") {
+    return (
+      <article className="rounded-2xl bg-sand/80 p-3.5">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-sm font-medium leading-snug">{issue.title}</h3>
+          <span className="shrink-0 font-mono text-[11px] text-muted">#{issue.iid}</span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {assigned ? <Chip tone="emerald">Assigned</Chip> : null}
+          {issue.labels.slice(0, 3).map((label) => (
+            <Chip key={label} tone="lavender">
+              {label}
+            </Chip>
+          ))}
+        </div>
+        <a
+          href={issue.webUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-flex text-xs font-medium text-accent hover:underline"
+        >
+          Open in GitLab
+        </a>
+      </article>
+    );
+  }
+
   return (
-    <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <article id={`issue-${issue.iid}`} className="border-b border-black/[0.06] py-5 last:border-b-0">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold leading-snug">{issue.title}</h3>
-        <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 font-mono text-xs text-muted">
+        <h3 className="text-[17px] font-medium leading-snug tracking-tight">{issue.title}</h3>
+        <span className="shrink-0 rounded-full bg-[#f1f3f4] px-2 py-0.5 font-mono text-[11px] text-muted">
           #{issue.iid}
         </span>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {typeof rank === "number" ? <Chip tone="emerald">Pick {rank}</Chip> : null}
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
+        {typeof rank === "number" ? <Chip tone="sky">Pick {rank}</Chip> : null}
         {assigned ? <Chip tone="emerald">Assigned to you</Chip> : null}
         {issue.state === "closed" ? <Chip>Closed</Chip> : null}
         {issue.labels.map((label) => (
-          <Chip key={label}>{label}</Chip>
+          <Chip key={label} tone="lavender">
+            {label}
+          </Chip>
         ))}
       </div>
 
-      {reason ? <p className="mt-3 text-sm text-muted">{reason}</p> : null}
+      {reason ? <p className="mt-3 text-sm leading-relaxed text-muted">{reason}</p> : null}
 
       {error ? (
         <p role="alert" className="mt-3 text-sm text-red-600">
@@ -67,22 +98,22 @@ export function IssueCard({
         </p>
       ) : null}
 
-      <div className="mt-auto flex flex-wrap items-center gap-3 pt-5">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         {claimable ? (
           <button
             type="button"
             onClick={claim}
             disabled={busy}
-            className="inline-flex items-center rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center rounded-full bg-ink px-4 py-1.5 text-sm font-medium text-white transition hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {busy ? "Claiming…" : "Claim"}
+            {busy ? "Claiming…" : "Claim issue"}
           </button>
         ) : null}
         <a
           href={issue.webUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium text-ink/80 transition hover:bg-black/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           View in GitLab
         </a>

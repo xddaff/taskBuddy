@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { FolderIcon } from "@/components/Icons";
 import { errorMessage, postJson } from "@/components/post-json";
-import type { Student } from "@/lib/types";
+import { isMaintainer, type Student } from "@/lib/types";
 
 type DemoLoginListProps = {
   students: Student[];
@@ -30,25 +31,28 @@ export function DemoLoginList({ students }: DemoLoginListProps) {
 
   return (
     <div>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {students.map((student) => (
           <li key={student.gitlabUserId}>
             <button
               type="button"
               onClick={() => signIn(student.username)}
               disabled={pendingUsername !== null}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-full w-full flex-col rounded-[1.35rem] bg-lavender/70 p-4 text-left transition hover:bg-lavender focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Avatar student={student} />
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold">{student.name}</span>
-                <span className="block truncate text-xs text-muted">
-                  {pendingUsername === student.username
-                    ? "Signing in…"
+              <span className="flex items-start justify-between">
+                <FolderIcon />
+                <Avatar student={student} size="sm" />
+              </span>
+              <span className="mt-6 block truncate text-[15px] font-medium">{student.name}</span>
+              <span className="mt-1 block truncate text-xs text-muted">
+                {pendingUsername === student.username
+                  ? "Opening notebook…"
+                  : isMaintainer(student)
+                    ? "Instructor notebook"
                     : student.skills.length > 0
-                      ? student.skills.join(", ")
-                      : `@${student.username}`}
-                </span>
+                      ? `${student.skills.length} ${student.skills.length === 1 ? "source" : "sources"} · ${student.skills.join(", ")}`
+                      : `@${student.username} · 0 sources`}
               </span>
             </button>
           </li>

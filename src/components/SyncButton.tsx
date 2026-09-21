@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { PlusIcon } from "@/components/Icons";
 import { errorMessage, postJson } from "@/components/post-json";
 
 export function SyncButton() {
@@ -26,9 +27,9 @@ export function SyncButton() {
   const busy = syncing || pending;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       {error ? (
-        <span role="alert" className="text-xs text-red-600">
+        <span role="alert" className="max-w-[10rem] truncate text-xs text-red-600">
           {error}
         </span>
       ) : null}
@@ -36,9 +37,10 @@ export function SyncButton() {
         type="button"
         onClick={sync}
         disabled={busy}
-        className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-ink transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-2 text-sm font-medium text-white transition hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {busy ? "Syncing…" : "Sync from GitLab"}
+        <PlusIcon className="h-3.5 w-3.5" />
+        {busy ? "Syncing…" : "Sync notebook"}
       </button>
     </div>
   );
