@@ -1,0 +1,28 @@
+node_modules/
+.pnpm-store/
+
+# build output
+.next/
+dist/
+out/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local
+
+# local attachment storage
+uploads/
+
+# local postgres data (when running without docker)
+.pgdata/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / os
+.DS_Store
+.idea/
+.vscode/
