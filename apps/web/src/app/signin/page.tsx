@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { env } from '@/env';
 import { currentUser, signIn } from '@/lib/auth';
+import { devSignIn } from '@/lib/dev-login';
 import { prisma } from '@studentproj/db';
 
 export default async function SignInPage() {
@@ -73,10 +74,7 @@ export default async function SignInPage() {
                 <form
                   action={async () => {
                     'use server';
-                    await signIn('dev-login', {
-                      username: student.gitlabUsername,
-                      redirectTo: '/tasks',
-                    });
+                    await devSignIn(student.gitlabUsername!);
                   }}
                 >
                   <button

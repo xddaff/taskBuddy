@@ -2,7 +2,6 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@studentproj/db';
 import { GITLAB_OAUTH_SCOPES, gitlabOAuthEndpoints } from '@studentproj/gitlab';
 import NextAuth, { type NextAuthConfig } from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
 import { env } from '@/env';
 import { encryptToken } from './crypto';
 
@@ -42,30 +41,6 @@ const gitlabProvider = {
   },
 };
 
-/// Signs in as an already-seeded student, without a password.
-///
-/// This exists so the app is usable before an OAuth application has been
-/// registered on the GitLab instance. It is gated on NODE_ENV and an explicit
-/// opt-in, and it will only ever match a user that the seed script created.
-const devLoginProvider = Credentials({
-  id: 'dev-login',
-  name: 'Demo student',
-  credentials: { username: { label: 'Seeded student username', type: 'text' } },
-  async authorize(credentials) {
-    if (!env.devLoginEnabled) return null;
-
-    const username = typeof credentials?.username === 'string' ? credentials.username.trim() : '';
-    if (!username) return null;
-
-    // Requiring an existing seeded user means this cannot be used to create an
-    // account, only to assume one that a developer put there deliberately.
-    const user = await prisma.user.findUnique({ where: { gitlabUsername: username } });
-    if (!user) return null;
-
-    return { id: user.id, name: user.name, email: user.email, image: user.image };
-  },
-});
-
 export const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(prisma),
   secret: env.authSecret(),
@@ -75,10 +50,7 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: 'database' },
   trustHost: true,
   pages: { signIn: '/signin' },
-  providers: [
-    ...(env.gitlabOAuthConfigured ? [gitlabProvider] : []),
-    ...(env.devLoginEnabled ? [devLoginProvider] : []),
-  ],
+  providers: env.gitlabOAuthConfigured ? [gitlabProvider] : [],
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
@@ -88,23 +60,13 @@ export const authConfig: NextAuthConfig = {
     },
   },
   events: {
-    /// Store the GitLab identity and encrypt the tokens Auth.js just wrote.
+    /// Re-encrypt the tokens Auth.js just wrote.
     ///
     /// The Prisma adapter persists access and refresh tokens in the clear, so
     /// they are re-encrypted immediately afterwards rather than being left
-    /// readable by anything with database access.
-    async linkAccount({ user, account, profile }) {
-      const gitlabUserId = Number.parseInt(String(profile.sub ?? ''), 10);
-      const gitlabUsername =
-        (profile.nickname as string) ?? (profile.preferred_username as string) ?? null;
-
-      if (Number.isFinite(gitlabUserId) && user.id) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { gitlabUserId, gitlabUsername },
-        });
-      }
-
+    /// readable by anything with database access. The GitLab identity itself is
+    /// already carried onto the user row by the provider's `profile` mapping.
+    async linkAccount({ account }) {
       const stored = await prisma.account.findUnique({
         where: {
           provider_providerAccountId: {

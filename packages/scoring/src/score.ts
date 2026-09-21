@@ -175,15 +175,22 @@ function buildReasons(input: {
     reasons.push(`Touches ${formatList(interestOverlap.map((tag) => tagLabel(tag.slug)))}`);
   }
 
-  if (estimatedHours !== null && factors.effortFit >= 0.6) {
-    reasons.push(`About ${formatHours(estimatedHours)}, fits your ${profile.weeklyHours}h/week`);
-  } else if (estimatedHours !== null && factors.effortFit < 0.35) {
+  if (estimatedHours !== null) {
     const budget = taskHourBudget(profile.weeklyHours, profile.commitment);
-    reasons.push(
-      estimatedHours > budget
-        ? `Larger than usual at ${formatHours(estimatedHours)}`
-        : `Small task, about ${formatHours(estimatedHours)}`,
-    );
+
+    if (estimatedHours > budget) {
+      // Never claim a task "fits" when it exceeds the budget. Translating the
+      // estimate into weeks at the student's own pace is both honest and more
+      // useful than a raw hour count they have to divide themselves.
+      const weeks = Math.ceil(estimatedHours / Math.max(1, profile.weeklyHours));
+      reasons.push(
+        `About ${formatHours(estimatedHours)}, roughly ${weeks} week${weeks === 1 ? '' : 's'} at ${profile.weeklyHours}h/week`,
+      );
+    } else if (factors.effortFit >= 0.6) {
+      reasons.push(`About ${formatHours(estimatedHours)}, fits your ${profile.weeklyHours}h/week`);
+    } else if (factors.effortFit < 0.35) {
+      reasons.push(`Small task, about ${formatHours(estimatedHours)}`);
+    }
   }
 
   if (isBeginnerFriendly(issue.labels)) {

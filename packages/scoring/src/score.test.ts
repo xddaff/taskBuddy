@@ -271,6 +271,20 @@ describe('scoreIssueForProfile', () => {
     expect(result.reasons).toContain('Flagged as beginner friendly');
   });
 
+  it('never claims an over-budget task fits, and sizes it in weeks instead', () => {
+    // 32h against a 6h/week, MODERATE (12h) budget. Saying this "fits your
+    // 6h/week" would be plainly false.
+    const result = scoreIssueForProfile(
+      webStudent,
+      { ...baseIssue, tags: [{ slug: 'react', weight: 1 }], timeEstimateSeconds: 32 * 3600 },
+      NOW,
+    );
+
+    const joined = result.reasons.join(' | ');
+    expect(joined).not.toMatch(/fits your/);
+    expect(joined).toMatch(/roughly 6 weeks at 6h\/week/);
+  });
+
   it('does not repeat a tag in both the skill and interest reason', () => {
     const result = scoreIssueForProfile(
       { ...webStudent, interests: ['react', 'accessibility'] },
