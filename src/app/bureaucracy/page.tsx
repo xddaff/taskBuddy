@@ -68,7 +68,7 @@ export default async function BureaucracyPage() {
           </section>
         ) : null}
 
-        <DocumentList documents={documents} canManage={canManage} />
+        <DocumentList documents={documents} viewer={student} />
       </main>
     </>
   );

@@ -63,6 +63,9 @@ issues are still spread as evenly as possible.
 | `/` | Sign in with GitLab, or pick a student in demo mode |
 | `/profile` | The skills and interests a student provides |
 | `/dashboard` | Participation meter, recommended issues, claim, sync |
+| `/chat` | Two rooms: students-only, and a class chat that includes the instructor |
+| `/shared` | Files students share with the class; the uploader or instructor can edit or remove them |
+| `/bureaucracy` | Official course documents; the instructor uploads, students download |
 | `/class` | Instructor only: set the minimum percentage, review the whole class |
 
 ## Development

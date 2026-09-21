@@ -4,7 +4,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { SyncButton } from "@/components/SyncButton";
 import { isMaintainer, type Student } from "@/lib/types";
 
-type NavKey = "dashboard" | "profile" | "chat" | "bureaucracy" | "class";
+type NavKey = "dashboard" | "profile" | "chat" | "shared" | "bureaucracy" | "class";
 
 type NavBarProps = {
   student: Student;
@@ -15,6 +15,7 @@ const LINKS: Array<{ key: NavKey; href: string; label: string; maintainerOnly?: 
   { key: "dashboard", href: "/dashboard", label: "Dashboard" },
   { key: "profile", href: "/profile", label: "Skills" },
   { key: "chat", href: "/chat", label: "Chat" },
+  { key: "shared", href: "/shared", label: "Shared files" },
   { key: "bureaucracy", href: "/bureaucracy", label: "Bureaucracy" },
   { key: "class", href: "/class", label: "Class", maintainerOnly: true },
 ];

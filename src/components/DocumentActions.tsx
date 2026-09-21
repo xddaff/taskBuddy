@@ -10,6 +10,7 @@ type CategoryOption = { key: string; label: string };
 type DocumentActionsProps = {
   document: DocumentView;
   categories: readonly CategoryOption[];
+  endpoint?: string;
 };
 
 type Mode = "idle" | "editing" | "confirming";
@@ -36,7 +37,11 @@ async function sendJson(url: string, method: "PATCH" | "DELETE", body?: unknown)
   throw new Error(message);
 }
 
-export function DocumentActions({ document, categories }: DocumentActionsProps) {
+export function DocumentActions({
+  document,
+  categories,
+  endpoint = "/api/documents",
+}: DocumentActionsProps) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("idle");
   const [pending, startTransition] = useTransition();
@@ -56,7 +61,7 @@ export function DocumentActions({ document, categories }: DocumentActionsProps) 
     setError(null);
     setWorking(true);
     try {
-      await sendJson(`/api/documents/${document.id}`, "PATCH", {
+      await sendJson(`${endpoint}/${document.id}`, "PATCH", {
         title: String(data.get("title") ?? ""),
         category: String(data.get("category") ?? ""),
         description: String(data.get("description") ?? ""),
@@ -74,7 +79,7 @@ export function DocumentActions({ document, categories }: DocumentActionsProps) 
     setError(null);
     setWorking(true);
     try {
-      await sendJson(`/api/documents/${document.id}`, "DELETE");
+      await sendJson(`${endpoint}/${document.id}`, "DELETE");
       setMode("idle");
       startTransition(() => router.refresh());
     } catch (cause) {

@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto";
 import { mkdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/db";
-import type { Student } from "@/lib/types";
+import { isMaintainer, type Student } from "@/lib/types";
+
+export const DOCUMENT_COLLECTIONS = ["official", "shared"] as const;
+export type DocumentCollection = (typeof DOCUMENT_COLLECTIONS)[number];
 
 export const DOCUMENT_CATEGORIES = [
   {
@@ -27,16 +30,44 @@ export const DOCUMENT_CATEGORIES = [
   },
 ] as const;
 
-export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number]["key"];
+export const SHARED_CATEGORIES = [
+  {
+    key: "notes",
+    label: "Notes",
+    blurb: "Lecture notes, meeting notes, and write-ups the class can reuse.",
+  },
+  {
+    key: "resource",
+    label: "Resources",
+    blurb: "Reference material, snippets, and files that help with the work.",
+  },
+  {
+    key: "other",
+    label: "Other",
+    blurb: "Anything else worth sharing with the class.",
+  },
+] as const;
+
+export type DocumentCategory =
+  | (typeof DOCUMENT_CATEGORIES)[number]["key"]
+  | (typeof SHARED_CATEGORIES)[number]["key"];
+
+export type CategorySpec = {
+  key: DocumentCategory;
+  label: string;
+  blurb: string;
+};
 
 export type DocumentView = {
   id: number;
+  collection: DocumentCollection;
   title: string;
   category: DocumentCategory;
   description: string;
   originalName: string;
   mimeType: string;
   sizeBytes: number;
+  uploadedByUserId: number;
   uploadedByName: string;
   createdAt: string;
 };
@@ -51,6 +82,7 @@ export type DocumentFile = {
 };
 
 export type UploadInput = {
+  collection: DocumentCollection;
   title: string;
   category: string;
   description?: string;
@@ -128,15 +160,41 @@ export class DocumentValidationError extends Error {
   }
 }
 
-export function isDocumentCategory(value: unknown): value is DocumentCategory {
-  return (
-    typeof value === "string" &&
-    DOCUMENT_CATEGORIES.some((category) => category.key === value)
-  );
+export function isDocumentCollection(value: unknown): value is DocumentCollection {
+  return value === "official" || value === "shared";
 }
 
-export function categoryLabel(category: DocumentCategory): string {
-  return DOCUMENT_CATEGORIES.find((entry) => entry.key === category)?.label ?? category;
+export function categoriesFor(collection: DocumentCollection): readonly CategorySpec[] {
+  return collection === "shared" ? SHARED_CATEGORIES : DOCUMENT_CATEGORIES;
+}
+
+export function isDocumentCategory(
+  value: unknown,
+  collection: DocumentCollection = "official",
+): value is DocumentCategory {
+  return typeof value === "string" && categoriesFor(collection).some((category) => category.key === value);
+}
+
+export function categoryLabel(
+  category: DocumentCategory,
+  collection: DocumentCollection = "official",
+): string {
+  return categoriesFor(collection).find((entry) => entry.key === category)?.label ?? category;
+}
+
+export function canUploadToCollection(
+  student: Pick<Student, "accessLevel">,
+  collection: DocumentCollection,
+): boolean {
+  return collection === "shared" || isMaintainer(student);
+}
+
+export function canManageDocument(
+  student: Pick<Student, "gitlabUserId" | "accessLevel">,
+  document: Pick<DocumentView, "collection" | "uploadedByUserId">,
+): boolean {
+  if (document.collection === "official") return isMaintainer(student);
+  return isMaintainer(student) || student.gitlabUserId === document.uploadedByUserId;
 }
 
 /**
@@ -188,6 +246,7 @@ export function allowedTypesSummary(): string {
  * message to show the uploader, or null when the upload is acceptable.
  */
 export function validateUpload(input: {
+  collection?: DocumentCollection;
   title: string;
   category: string;
   description?: string;
@@ -195,6 +254,7 @@ export function validateUpload(input: {
   mimeType: string;
   sizeBytes: number;
 }): string | null {
+  const collection = input.collection ?? "official";
   const title = input.title.trim();
   if (title.length === 0) return "A title is required";
   if (title.length > MAX_TITLE_LENGTH) {
@@ -203,8 +263,8 @@ export function validateUpload(input: {
   if ((input.description ?? "").length > MAX_DESCRIPTION_LENGTH) {
     return `The description must be at most ${MAX_DESCRIPTION_LENGTH} characters`;
   }
-  if (!isDocumentCategory(input.category)) {
-    return `Pick one of: ${DOCUMENT_CATEGORIES.map((entry) => entry.label).join(", ")}`;
+  if (!isDocumentCategory(input.category, collection)) {
+    return `Pick one of: ${categoriesFor(collection).map((entry) => entry.label).join(", ")}`;
   }
   if (input.filename.trim().length === 0) return "A file is required";
   if (input.sizeBytes <= 0) return "The file is empty";
@@ -217,7 +277,10 @@ export function validateUpload(input: {
   return null;
 }
 
-export function validateMetadata(input: MetadataInput): string | null {
+export function validateMetadata(
+  input: MetadataInput,
+  collection: DocumentCollection = "official",
+): string | null {
   if (input.title !== undefined) {
     const title = input.title.trim();
     if (title.length === 0) return "A title is required";
@@ -228,8 +291,8 @@ export function validateMetadata(input: MetadataInput): string | null {
   if (input.description !== undefined && input.description.length > MAX_DESCRIPTION_LENGTH) {
     return `The description must be at most ${MAX_DESCRIPTION_LENGTH} characters`;
   }
-  if (input.category !== undefined && !isDocumentCategory(input.category)) {
-    return `Pick one of: ${DOCUMENT_CATEGORIES.map((entry) => entry.label).join(", ")}`;
+  if (input.category !== undefined && !isDocumentCategory(input.category, collection)) {
+    return `Pick one of: ${categoriesFor(collection).map((entry) => entry.label).join(", ")}`;
   }
   return null;
 }
@@ -260,6 +323,7 @@ export function documentFilePath(storedName: string): string {
 
 type DocumentRow = {
   id: number;
+  collection: string;
   title: string;
   category: string;
   description: string;
@@ -267,26 +331,43 @@ type DocumentRow = {
   storedName: string;
   mimeType: string;
   sizeBytes: number;
+  uploadedByUserId: number;
   uploadedByName: string;
   createdAt: Date;
 };
 
+function fallbackCategory(collection: DocumentCollection): DocumentCategory {
+  return collection === "shared" ? "other" : "guide";
+}
+
 function toView(row: DocumentRow): DocumentView {
+  const collection: DocumentCollection = isDocumentCollection(row.collection)
+    ? row.collection
+    : "official";
   return {
     id: row.id,
+    collection,
     title: row.title,
-    category: isDocumentCategory(row.category) ? row.category : "guide",
+    category: isDocumentCategory(row.category, collection)
+      ? row.category
+      : fallbackCategory(collection),
     description: row.description,
     originalName: row.originalName,
     mimeType: row.mimeType,
     sizeBytes: row.sizeBytes,
+    uploadedByUserId: row.uploadedByUserId,
     uploadedByName: row.uploadedByName,
     createdAt: row.createdAt.toISOString(),
   };
 }
 
-export async function listDocuments(): Promise<DocumentView[]> {
-  const rows = await prisma.document.findMany({ orderBy: { createdAt: "desc" } });
+export async function listDocuments(
+  collection: DocumentCollection = "official",
+): Promise<DocumentView[]> {
+  const rows = await prisma.document.findMany({
+    where: { collection },
+    orderBy: { createdAt: "desc" },
+  });
   return rows.map(toView);
 }
 
@@ -323,6 +404,7 @@ export async function saveDocument(input: UploadInput): Promise<DocumentView> {
   const description = (input.description ?? "").trim();
   const mimeType = resolveMimeType(input.file.type ?? "", input.file.name ?? "");
   const problem = validateUpload({
+    collection: input.collection,
     title: input.title,
     category: input.category,
     description,
@@ -349,6 +431,7 @@ export async function saveDocument(input: UploadInput): Promise<DocumentView> {
   try {
     const row = await prisma.document.create({
       data: {
+        collection: input.collection,
         title: input.title.trim(),
         category: input.category,
         description,
@@ -372,11 +455,11 @@ export async function updateDocument(
   input: MetadataInput,
 ): Promise<DocumentView | null> {
   if (!Number.isInteger(id)) return null;
-  const problem = validateMetadata(input);
-  if (problem) throw new DocumentValidationError(problem);
-
   const existing = await prisma.document.findUnique({ where: { id } });
   if (!existing) return null;
+  const collection = isDocumentCollection(existing.collection) ? existing.collection : "official";
+  const problem = validateMetadata(input, collection);
+  if (problem) throw new DocumentValidationError(problem);
 
   const row = await prisma.document.update({
     where: { id },
@@ -398,8 +481,9 @@ export async function deleteDocument(id: number): Promise<void> {
 
 export function groupByCategory(
   documents: DocumentView[],
+  collection: DocumentCollection = "official",
 ): Array<{ key: DocumentCategory; label: string; blurb: string; documents: DocumentView[] }> {
-  return DOCUMENT_CATEGORIES.map((category) => ({
+  return categoriesFor(collection).map((category) => ({
     key: category.key,
     label: category.label,
     blurb: category.blurb,

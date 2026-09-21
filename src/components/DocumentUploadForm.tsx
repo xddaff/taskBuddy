@@ -7,11 +7,16 @@ import { errorMessage } from "@/components/post-json";
 type CategoryOption = { key: string; label: string };
 
 type DocumentUploadFormProps = {
+  endpoint?: string;
   categories: readonly CategoryOption[];
   accept: string;
   maxBytes: number;
   maxSizeLabel: string;
   allowedTypesLabel: string;
+  titlePlaceholder?: string;
+  descriptionPlaceholder?: string;
+  submitLabel?: string;
+  idPrefix?: string;
 };
 
 async function readError(response: Response): Promise<string> {
@@ -28,11 +33,16 @@ async function readError(response: Response): Promise<string> {
 }
 
 export function DocumentUploadForm({
+  endpoint = "/api/documents",
   categories,
   accept,
   maxBytes,
   maxSizeLabel,
   allowedTypesLabel,
+  titlePlaceholder = "e.g. Project plan 2026",
+  descriptionPlaceholder = "One line on what this document is for",
+  submitLabel = "Upload document",
+  idPrefix = "document",
 }: DocumentUploadFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -63,7 +73,7 @@ export function DocumentUploadForm({
 
     setUploading(true);
     try {
-      const response = await fetch("/api/documents", { method: "POST", body: data });
+      const response = await fetch(endpoint, { method: "POST", body: data });
       if (!response.ok) throw new Error(await readError(response));
       form.reset();
       setUploaded(file.name);
@@ -80,44 +90,44 @@ export function DocumentUploadForm({
   return (
     <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <label htmlFor="document-file" className="block text-sm font-medium">
+        <label htmlFor={`${idPrefix}-file`} className="block text-sm font-medium">
           File
         </label>
         <input
-          id="document-file"
+          id={`${idPrefix}-file`}
           name="file"
           type="file"
           accept={accept}
           required
-          aria-describedby="document-file-hint"
+          aria-describedby={`${idPrefix}-file-hint`}
           className="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink hover:file:bg-slate-200 focus:border-ink focus:ring-1 focus:ring-ink"
         />
-        <p id="document-file-hint" className="mt-1.5 text-xs text-muted">
+        <p id={`${idPrefix}-file-hint`} className="mt-1.5 text-xs text-muted">
           {allowedTypesLabel}. Up to {maxSizeLabel}.
         </p>
       </div>
 
       <div>
-        <label htmlFor="document-title" className="block text-sm font-medium">
+        <label htmlFor={`${idPrefix}-title`} className="block text-sm font-medium">
           Title
         </label>
         <input
-          id="document-title"
+          id={`${idPrefix}-title`}
           name="title"
           type="text"
           required
           maxLength={200}
-          placeholder="e.g. Project plan 2026"
+          placeholder={titlePlaceholder}
           className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-ink focus:ring-1 focus:ring-ink"
         />
       </div>
 
       <div>
-        <label htmlFor="document-category" className="block text-sm font-medium">
+        <label htmlFor={`${idPrefix}-category`} className="block text-sm font-medium">
           Category
         </label>
         <select
-          id="document-category"
+          id={`${idPrefix}-category`}
           name="category"
           defaultValue={categories[0]?.key}
           className="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-ink focus:ring-1 focus:ring-ink"
@@ -131,15 +141,15 @@ export function DocumentUploadForm({
       </div>
 
       <div className="sm:col-span-2">
-        <label htmlFor="document-description" className="block text-sm font-medium">
+        <label htmlFor={`${idPrefix}-description`} className="block text-sm font-medium">
           Description <span className="font-normal text-muted">(optional)</span>
         </label>
         <textarea
-          id="document-description"
+          id={`${idPrefix}-description`}
           name="description"
           rows={2}
           maxLength={1000}
-          placeholder="One line on what this document is for"
+          placeholder={descriptionPlaceholder}
           className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-ink focus:ring-1 focus:ring-ink"
         />
       </div>
@@ -150,7 +160,7 @@ export function DocumentUploadForm({
           disabled={busy}
           className="inline-flex items-center rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {busy ? "Uploading…" : "Upload document"}
+          {busy ? "Uploading…" : submitLabel}
         </button>
         {uploaded && !busy ? (
           <p className="text-sm text-emerald-700">Uploaded {uploaded}</p>

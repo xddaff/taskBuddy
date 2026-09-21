@@ -5,7 +5,6 @@ import {
   saveDocument,
 } from "@/lib/documents";
 import { getCurrentStudent } from "@/lib/session";
-import { isMaintainer } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -22,23 +21,17 @@ function readFile(form: FormData): File | null {
 export async function GET() {
   const student = await getCurrentStudent();
   if (!student) {
-    return NextResponse.json({ error: "Sign in to see the course documents" }, { status: 401 });
+    return NextResponse.json({ error: "Sign in to see shared files" }, { status: 401 });
   }
 
-  const documents = await listDocuments();
+  const documents = await listDocuments("shared");
   return NextResponse.json({ documents });
 }
 
 export async function POST(request: Request) {
   const student = await getCurrentStudent();
   if (!student) {
-    return NextResponse.json({ error: "Sign in to upload a document" }, { status: 401 });
-  }
-  if (!isMaintainer(student)) {
-    return NextResponse.json(
-      { error: "Only instructors can upload course documents" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: "Sign in to share a file" }, { status: 401 });
   }
 
   let form: FormData;
@@ -55,7 +48,7 @@ export async function POST(request: Request) {
 
   try {
     const document = await saveDocument({
-      collection: "official",
+      collection: "shared",
       title: readText(form, "title"),
       category: readText(form, "category"),
       description: readText(form, "description"),

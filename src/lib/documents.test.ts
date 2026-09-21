@@ -3,6 +3,9 @@ import {
   ALLOWED_MIME_TYPES,
   DOCUMENT_CATEGORIES,
   MAX_UPLOAD_BYTES,
+  SHARED_CATEGORIES,
+  canManageDocument,
+  canUploadToCollection,
   categoryLabel,
   contentDispositionFilename,
   formatFileSize,
@@ -13,6 +16,7 @@ import {
   validateMetadata,
   validateUpload,
 } from "@/lib/documents";
+import { ACCESS_LEVEL } from "@/lib/types";
 
 const KB = 1024;
 const MB = 1024 * 1024;
@@ -224,5 +228,73 @@ describe("contentDispositionFilename", () => {
   it("falls back when nothing usable is left", () => {
     expect(contentDispositionFilename("")).toBe("document");
     expect(contentDispositionFilename('"""')).toBe("document");
+  });
+});
+
+describe("shared file collections", () => {
+  const student = {
+    gitlabUserId: 104,
+    username: "dara",
+    name: "Dara Nilsson",
+    avatarUrl: null,
+    accessLevel: ACCESS_LEVEL.DEVELOPER,
+    skills: [],
+  };
+  const classmate = { ...student, gitlabUserId: 101, username: "amelia", name: "Amelia Okonkwo" };
+  const instructor = { ...student, gitlabUserId: 100, accessLevel: ACCESS_LEVEL.MAINTAINER };
+
+  it("accepts the student-share categories only in the shared collection", () => {
+    expect(isDocumentCategory("notes", "shared")).toBe(true);
+    expect(isDocumentCategory("resource", "shared")).toBe(true);
+    expect(isDocumentCategory("other", "shared")).toBe(true);
+    expect(isDocumentCategory("plan", "shared")).toBe(false);
+    expect(isDocumentCategory("notes")).toBe(false);
+    expect(categoryLabel("notes", "shared")).toBe("Notes");
+    expect(SHARED_CATEGORIES.map((category) => category.key)).toEqual([
+      "notes",
+      "resource",
+      "other",
+    ]);
+  });
+
+  it("lets any signed-in member upload to the shared collection, not bureaucracy", () => {
+    expect(canUploadToCollection(student, "shared")).toBe(true);
+    expect(canUploadToCollection(instructor, "shared")).toBe(true);
+    expect(canUploadToCollection(student, "official")).toBe(false);
+    expect(canUploadToCollection(instructor, "official")).toBe(true);
+  });
+
+  it("lets the uploader or the instructor manage a shared file", () => {
+    const file = {
+      collection: "shared" as const,
+      uploadedByUserId: student.gitlabUserId,
+    };
+    expect(canManageDocument(student, file)).toBe(true);
+    expect(canManageDocument(instructor, file)).toBe(true);
+    expect(canManageDocument(classmate, file)).toBe(false);
+  });
+
+  it("keeps official documents instructor-only even for the uploader", () => {
+    const file = {
+      collection: "official" as const,
+      uploadedByUserId: student.gitlabUserId,
+    };
+    expect(canManageDocument(student, file)).toBe(false);
+    expect(canManageDocument(instructor, file)).toBe(true);
+  });
+
+  it("validates shared uploads against the student categories", () => {
+    const valid = {
+      collection: "shared" as const,
+      title: "Week 2 notes",
+      category: "notes",
+      filename: "notes.md",
+      mimeType: "text/markdown",
+      sizeBytes: 1200,
+    };
+    expect(validateUpload(valid)).toBeNull();
+    expect(validateUpload({ ...valid, category: "plan" })).toMatch(/Notes/);
+    expect(validateMetadata({ category: "resource" }, "shared")).toBeNull();
+    expect(validateMetadata({ category: "plan" }, "shared")).toMatch(/Notes/);
   });
 });

@@ -1,34 +1,25 @@
 import { NextResponse } from "next/server";
 import {
   DocumentValidationError,
+  canManageDocument,
   deleteDocument,
   getDocument,
   updateDocument,
   type MetadataInput,
 } from "@/lib/documents";
 import { getCurrentStudent } from "@/lib/session";
-import { isMaintainer, type Student } from "@/lib/types";
+import type { Student } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-type Guard = { student: Student } | { response: NextResponse };
-
-async function requireInstructor(action: string): Promise<Guard> {
+async function requireStudent(): Promise<Student | NextResponse> {
   const student = await getCurrentStudent();
   if (!student) {
-    return { response: NextResponse.json({ error: `Sign in to ${action}` }, { status: 401 }) };
+    return NextResponse.json({ error: "Sign in to manage this file" }, { status: 401 });
   }
-  if (!isMaintainer(student)) {
-    return {
-      response: NextResponse.json(
-        { error: `Only instructors can ${action}` },
-        { status: 403 },
-      ),
-    };
-  }
-  return { student };
+  return student;
 }
 
 async function readId(context: RouteContext): Promise<number | null> {
@@ -46,12 +37,23 @@ function readMetadata(body: Record<string, unknown>): MetadataInput {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const guard = await requireInstructor("edit course documents");
-  if ("response" in guard) return guard.response;
+  const student = await requireStudent();
+  if (student instanceof NextResponse) return student;
 
   const id = await readId(context);
   if (id === null) {
-    return NextResponse.json({ error: "Unknown document" }, { status: 404 });
+    return NextResponse.json({ error: "Unknown file" }, { status: 404 });
+  }
+
+  const existing = await getDocument(id);
+  if (!existing || existing.collection !== "shared") {
+    return NextResponse.json({ error: "Unknown file" }, { status: 404 });
+  }
+  if (!canManageDocument(student, existing)) {
+    return NextResponse.json(
+      { error: "You can only edit files you uploaded" },
+      { status: 403 },
+    );
   }
 
   let body: Record<string, unknown> = {};
@@ -72,15 +74,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
   }
 
-  const existing = await getDocument(id);
-  if (!existing || existing.collection !== "official") {
-    return NextResponse.json({ error: "Unknown document" }, { status: 404 });
-  }
-
   try {
     const document = await updateDocument(id, input);
     if (!document) {
-      return NextResponse.json({ error: "Unknown document" }, { status: 404 });
+      return NextResponse.json({ error: "Unknown file" }, { status: 404 });
     }
     return NextResponse.json({ ok: true, document });
   } catch (cause) {
@@ -92,17 +89,23 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const guard = await requireInstructor("delete course documents");
-  if ("response" in guard) return guard.response;
+  const student = await requireStudent();
+  if (student instanceof NextResponse) return student;
 
   const id = await readId(context);
   if (id === null) {
-    return NextResponse.json({ error: "Unknown document" }, { status: 404 });
+    return NextResponse.json({ error: "Unknown file" }, { status: 404 });
   }
 
   const existing = await getDocument(id);
-  if (!existing || existing.collection !== "official") {
-    return NextResponse.json({ error: "Unknown document" }, { status: 404 });
+  if (!existing || existing.collection !== "shared") {
+    return NextResponse.json({ error: "Unknown file" }, { status: 404 });
+  }
+  if (!canManageDocument(student, existing)) {
+    return NextResponse.json(
+      { error: "You can only delete files you uploaded" },
+      { status: 403 },
+    );
   }
 
   await deleteDocument(id);

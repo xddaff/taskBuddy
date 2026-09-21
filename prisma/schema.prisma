@@ -53,6 +53,7 @@ model ChatMessage {
 
 model Document {
   id               Int      @id @default(autoincrement())
+  collection       String   @default("official")
   title            String
   category         String
   description      String   @default("")
@@ -64,7 +65,7 @@ model Document {
   uploadedByName   String
   createdAt        DateTime @default(now())
 
-  @@index([category, createdAt])
+  @@index([collection, category, createdAt])
 }
 
 model Recommendation {
