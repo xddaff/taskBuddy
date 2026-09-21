@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Chip } from "@/components/Chip";
 import { MinParticipationForm } from "@/components/MinParticipationForm";
 import { NavBar } from "@/components/NavBar";
+import { RecategorizeButton } from "@/components/RecategorizeButton";
+import { summarizeCategories } from "@/lib/category-stats";
 import { loadClassPlan } from "@/lib/plan-service";
 import { getCurrentStudent } from "@/lib/session";
 import { isMaintainer } from "@/lib/types";
@@ -13,7 +16,8 @@ export default async function ClassPage() {
   if (!student) redirect("/");
   if (!isMaintainer(student)) redirect("/dashboard");
 
-  const { plan, config } = await loadClassPlan();
+  const { plan, config, issues } = await loadClassPlan();
+  const categoryCounts = summarizeCategories(issues);
 
   const recommendedCounts = new Map<number, number>();
   for (const recommendation of plan.recommendations) {
@@ -48,6 +52,47 @@ export default async function ClassPage() {
 
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <MinParticipationForm initialPct={config.minParticipationPct} />
+        </section>
+
+        <section
+          aria-labelledby="categories-heading"
+          className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 id="categories-heading" className="text-lg font-semibold">
+                Work by category
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                TaskBuddy categorizes every task from its title, description, and labels. Students
+                never set these.
+              </p>
+            </div>
+            <RecategorizeButton />
+          </div>
+
+          {categoryCounts.length > 0 ? (
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {categoryCounts.map((count) => (
+                <li
+                  key={count.slug}
+                  className="rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <Chip tone={count.tone}>{count.label}</Chip>
+                    <span className="font-semibold tabular-nums">{count.total}</span>
+                  </div>
+                  <p className="mt-2 text-xs text-muted">
+                    {count.open} open · {count.unassigned} still unclaimed
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-5 rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-muted">
+              No tasks to categorize yet. Sync from GitLab to pull in the project issues.
+            </p>
+          )}
         </section>
 
         {!plan.feasible ? (

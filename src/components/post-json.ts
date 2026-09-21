@@ -13,7 +13,7 @@ async function readErrorMessage(response: Response, fallback: string): Promise<s
   return fallback;
 }
 
-export async function postJson(url: string, body?: unknown): Promise<void> {
+export async function postJson<T = unknown>(url: string, body?: unknown): Promise<T | null> {
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -22,6 +22,7 @@ export async function postJson(url: string, body?: unknown): Promise<void> {
   if (!response.ok) {
     throw new Error(await readErrorMessage(response, `Request to ${url} failed`));
   }
+  return (await response.json().catch(() => null)) as T | null;
 }
 
 export function errorMessage(error: unknown): string {
