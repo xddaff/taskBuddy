@@ -12,13 +12,13 @@ export type ChatRoom = {
 export const CHAT_ROOMS: ChatRoom[] = [
   {
     key: "students",
-    label: "Students only",
-    description: "Private to the class members. Instructors cannot see this room.",
+    label: "Class",
+    description: "Class discussion. Students and the instructor can both read and post.",
   },
   {
     key: "class",
-    label: "Class chat",
-    description: "Everyone on the project, including the instructor.",
+    label: "Teacher",
+    description: "Chat with the instructor about the course.",
   },
 ];
 
@@ -30,17 +30,12 @@ export function isChatRoomKey(value: unknown): value is ChatRoomKey {
   return value === "students" || value === "class";
 }
 
-/**
- * The students-only room is the point of the feature, so instructors are refused
- * here rather than only being kept out of the UI.
- */
-export function canAccessRoom(student: Student, room: ChatRoomKey): boolean {
-  if (room === "class") return true;
-  return !isMaintainer(student);
+export function canAccessRoom(_student: Student, room: ChatRoomKey): boolean {
+  return isChatRoomKey(room);
 }
 
-export function roomsFor(student: Student): ChatRoom[] {
-  return CHAT_ROOMS.filter((room) => canAccessRoom(student, room.key));
+export function roomsFor(_student: Student): ChatRoom[] {
+  return CHAT_ROOMS;
 }
 
 export function defaultRoomFor(student: Student): ChatRoomKey {

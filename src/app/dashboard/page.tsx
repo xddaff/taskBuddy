@@ -109,15 +109,6 @@ export default async function DashboardPage() {
           </section>
 
           <section className="flex min-h-[18rem] flex-1 flex-col overflow-hidden rounded-pane bg-paper shadow-pane lg:min-h-0">
-            <div className="flex items-center justify-between gap-2 px-4 pb-1 pt-3">
-              <h2 className="text-xs font-medium tracking-tight text-ink">Chat</h2>
-              <Link
-                href="/chat"
-                className="rounded-full px-2 py-0.5 text-[11px] font-medium text-muted hover:bg-black/[0.04] hover:text-ink"
-              >
-                Open
-              </Link>
-            </div>
             <div className="min-h-0 flex-1">
               <ChatPanel
                 rooms={rooms}
