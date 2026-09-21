@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Chip } from "@/components/Chip";
 import { MinParticipationForm } from "@/components/MinParticipationForm";
 import { NavBar } from "@/components/NavBar";
 import { Pane } from "@/components/Pane";
+import { RecategorizeButton } from "@/components/RecategorizeButton";
+import { summarizeCategories } from "@/lib/category-stats";
 import { loadClassPlan } from "@/lib/plan-service";
 import { getCurrentStudent } from "@/lib/session";
 import { isMaintainer } from "@/lib/types";
@@ -14,7 +17,8 @@ export default async function ClassPage() {
   if (!student) redirect("/");
   if (!isMaintainer(student)) redirect("/dashboard");
 
-  const { plan, config } = await loadClassPlan();
+  const { plan, config, issues } = await loadClassPlan();
+  const categoryCounts = summarizeCategories(issues);
 
   const recommendedCounts = new Map<number, number>();
   for (const recommendation of plan.recommendations) {
@@ -49,6 +53,35 @@ export default async function ClassPage() {
 
         <Pane title="Minimum participation">
           <MinParticipationForm initialPct={config.minParticipationPct} />
+        </Pane>
+
+        <Pane title="Work by category">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <p className="max-w-xl text-sm leading-relaxed text-muted">
+              TaskBuddy categorizes every task from its title, description, and labels. Students
+              never set these.
+            </p>
+            <RecategorizeButton />
+          </div>
+          {categoryCounts.length > 0 ? (
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {categoryCounts.map((count) => (
+                <li key={count.slug} className="rounded-2xl bg-[#f8f6fc] px-4 py-3 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <Chip tone={count.tone}>{count.label}</Chip>
+                    <span className="font-semibold tabular-nums">{count.total}</span>
+                  </div>
+                  <p className="mt-2 text-xs text-muted">
+                    {count.open} open · {count.unassigned} still unclaimed
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-2xl bg-[#f8f6fc] px-4 py-8 text-center text-sm text-muted">
+              No tasks to categorize yet. Sync from GitLab to pull in the project issues.
+            </p>
+          )}
         </Pane>
 
         {!plan.feasible ? (

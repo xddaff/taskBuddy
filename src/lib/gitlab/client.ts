@@ -82,6 +82,7 @@ function toIssue(issue: GitLabIssue): Issue {
     labels: issue.labels ?? [],
     assigneeGitlabUserIds: (issue.assignees ?? []).map((assignee) => assignee.id),
     webUrl: issue.web_url,
+    categories: [],
   };
 }
 

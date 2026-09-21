@@ -14,11 +14,13 @@ export type ChipTone = keyof typeof TONES;
 type ChipProps = {
   children: ReactNode;
   tone?: ChipTone;
+  title?: string;
 };
 
-export function Chip({ children, tone = "slate" }: ChipProps) {
+export function Chip({ children, tone = "slate", title }: ChipProps) {
   return (
     <span
+      title={title}
       className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${TONES[tone]}`}
     >
       {children}

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { CategoryChips } from "@/components/CategoryChips";
 import { Chip } from "@/components/Chip";
 import { errorMessage, postJson } from "@/components/post-json";
 import type { Issue } from "@/lib/types";
@@ -60,6 +61,7 @@ export function IssueCard({
         {typeof rank === "number" ? <Chip tone="sky">Pick {rank}</Chip> : null}
         {assigned ? <Chip tone="emerald">Assigned to you</Chip> : null}
         {issue.state === "closed" ? <Chip>Closed</Chip> : null}
+        <CategoryChips categories={issue.categories} />
         {issue.labels.map((label) => (
           <Chip key={label} tone="lavender">
             {label}

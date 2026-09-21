@@ -1,5 +1,5 @@
 import { recommend } from "@/lib/recommender";
-import { ensureSeeded, getConfig, listIssues, listStudents } from "@/lib/repo";
+import { ensureIssuesCategorized, ensureSeeded, getConfig, listIssues, listStudents } from "@/lib/repo";
 import type { AppConfig, ClassPlan, Issue, Student } from "@/lib/types";
 
 export type LoadedClassPlan = {
@@ -11,6 +11,7 @@ export type LoadedClassPlan = {
 
 export async function loadClassPlan(): Promise<LoadedClassPlan> {
   await ensureSeeded();
+  await ensureIssuesCategorized();
   const [config, students, issues] = await Promise.all([getConfig(), listStudents(), listIssues()]);
   const plan = recommend({
     students,
