@@ -36,6 +36,11 @@ model Issue {
   webUrl        String   @default("")
   updatedAt     DateTime @updatedAt
 
+  categoriesJson    String    @default("[]")
+  categorySource    String    @default("")
+  categoryInputHash String    @default("")
+  categorizedAt     DateTime?
+
   recommendations Recommendation[]
 }
 

@@ -67,6 +67,7 @@ function demoIssue(
     labels,
     assigneeGitlabUserIds,
     webUrl: `https://gitlab.com/demo/course-project/-/issues/${iid}`,
+    categories: [],
   };
 }
 

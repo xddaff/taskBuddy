@@ -20,6 +20,7 @@ function issue(overrides: Partial<Issue> & Pick<Issue, "iid">): Issue {
     labels: [],
     assigneeGitlabUserIds: [],
     webUrl: `https://gitlab.example.com/issues/${overrides.iid}`,
+    categories: [],
     ...overrides,
   };
 }

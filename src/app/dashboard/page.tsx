@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CategoryFilter } from "@/components/CategoryFilter";
 import { ChatPanel } from "@/components/ChatPanel";
 import { IssueCard } from "@/components/IssueCard";
 import { NavBar } from "@/components/NavBar";
 import { Pane } from "@/components/Pane";
 import { ParticipationMeter } from "@/components/ParticipationMeter";
+import { issueMatchesCategory, summarizeCategories } from "@/lib/category-stats";
 import { defaultRoomFor, listMessages, roomsFor } from "@/lib/chat";
 import { issuesByIid, loadClassPlan } from "@/lib/plan-service";
 import { recommendationsForStudent } from "@/lib/recommender";
@@ -13,10 +15,18 @@ import { isMaintainer, type ClassPlan, type ParticipationStat } from "@/lib/type
 
 export const dynamic = "force-dynamic";
 
+type DashboardPageProps = {
+  searchParams: Promise<{ category?: string | string[] }>;
+};
+
 function emptyRecommendationCopy(
   plan: ClassPlan,
   stat: ParticipationStat | null,
+  filtered: boolean,
 ): string {
+  if (filtered) {
+    return "None of your recommendations fall in this category. Pick another one above.";
+  }
   if (!stat) {
     return "Instructors are not part of the recommendation pool. Open the class view to track students.";
   }
@@ -29,7 +39,7 @@ function emptyRecommendationCopy(
   return "There are no open, unassigned issues left to recommend right now. Sync from GitLab to pull in new ones.";
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const student = await getCurrentStudent();
   if (!student) redirect("/");
 
@@ -37,15 +47,31 @@ export default async function DashboardPage() {
   const byIid = issuesByIid(issues);
 
   const stat = plan.stats.find((entry) => entry.gitlabUserId === student.gitlabUserId) ?? null;
-  const recommended = recommendationsForStudent(plan, student.gitlabUserId).flatMap(
+  const allRecommended = recommendationsForStudent(plan, student.gitlabUserId).flatMap(
     (recommendation) => {
       const issue = byIid.get(recommendation.issueIid);
       return issue ? [{ recommendation, issue }] : [];
     },
   );
-  const assigned = issues.filter((issue) =>
+  const allAssigned = issues.filter((issue) =>
     issue.assigneeGitlabUserIds.includes(student.gitlabUserId),
   );
+
+  const counts = summarizeCategories([
+    ...allRecommended.map((entry) => entry.issue),
+    ...allAssigned,
+  ]);
+  const requested = (await searchParams).category;
+  const raw = Array.isArray(requested) ? requested[0] : requested;
+  const activeCategory = counts.some((count) => count.slug === raw) ? (raw as string) : null;
+
+  const recommended = activeCategory
+    ? allRecommended.filter((entry) => issueMatchesCategory(entry.issue, activeCategory))
+    : allRecommended;
+  const assigned = activeCategory
+    ? allAssigned.filter((issue) => issueMatchesCategory(issue, activeCategory))
+    : allAssigned;
+
   const rooms = roomsFor(student);
   const initialRoom = defaultRoomFor(student);
   const initialMessages = await listMessages(initialRoom);
@@ -109,15 +135,6 @@ export default async function DashboardPage() {
           </section>
 
           <section className="flex min-h-[18rem] flex-1 flex-col overflow-hidden rounded-pane bg-paper shadow-pane lg:min-h-0">
-            <div className="flex items-center justify-between gap-2 px-4 pb-1 pt-3">
-              <h2 className="text-xs font-medium tracking-tight text-ink">Chat</h2>
-              <Link
-                href="/chat"
-                className="rounded-full px-2 py-0.5 text-[11px] font-medium text-muted hover:bg-black/[0.04] hover:text-ink"
-              >
-                Open
-              </Link>
-            </div>
             <div className="min-h-0 flex-1">
               <ChatPanel
                 rooms={rooms}
@@ -131,9 +148,17 @@ export default async function DashboardPage() {
         </div>
 
         <Pane title="Recommended for you" className="min-h-[24rem] lg:min-h-0">
-          <p className="mb-4 text-sm text-muted">
+          <p className="mb-3 text-sm text-muted">
             {recommended.length} {recommended.length === 1 ? "issue" : "issues"}
           </p>
+          <div className="mb-4">
+            <CategoryFilter
+              basePath="/dashboard"
+              active={activeCategory}
+              counts={counts}
+              total={allRecommended.length + allAssigned.length}
+            />
+          </div>
           {recommended.length > 0 ? (
             <ul className="space-y-3">
               {recommended.map(({ recommendation, issue }) => (
@@ -149,7 +174,7 @@ export default async function DashboardPage() {
             </ul>
           ) : (
             <p className="rounded-2xl bg-[#f8f6fc] px-4 py-8 text-center text-sm text-muted">
-              {emptyRecommendationCopy(plan, stat)}
+              {emptyRecommendationCopy(plan, stat, activeCategory !== null)}
             </p>
           )}
         </Pane>
@@ -165,7 +190,9 @@ export default async function DashboardPage() {
             </ul>
           ) : (
             <p className="rounded-2xl bg-[#f8f6fc] px-4 py-8 text-center text-sm text-muted">
-              You have not claimed any issues yet. Claim one of the recommendations to get started.
+              {activeCategory
+                ? "You have no issues in this category yet."
+                : "You have not claimed any issues yet. Claim one of the recommendations to get started."}
             </p>
           )}
         </Pane>

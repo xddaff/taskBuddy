@@ -79,7 +79,7 @@ export function recommend(input: RecommendInput): ClassPlan {
 
     const index = bestIssueIndex(student, pool);
     const [issue] = pool.splice(index, 1);
-    const { score, matchedLabels } = scoreIssueForStudent(student, issue);
+    const { score, matchedLabels, matchedCategories } = scoreIssueForStudent(student, issue);
     const rank = (ranks.get(slot.gitlabUserId) ?? 0) + 1;
     ranks.set(slot.gitlabUserId, rank);
     slot.need -= 1;
@@ -89,7 +89,7 @@ export function recommend(input: RecommendInput): ClassPlan {
       issueIid: issue.iid,
       rank,
       score,
-      reason: describeReason(matchedLabels, minParticipationPct),
+      reason: describeReason(matchedLabels, minParticipationPct, matchedCategories),
     });
   }
 

@@ -77,8 +77,6 @@ export function ChatPanel({
 
   const activeRoom = rooms.find((entry) => entry.key === room) ?? rooms[0];
 
-  // One interval per active room: it is cleared on unmount and whenever the room
-  // changes, so only the visible room is ever polled.
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
@@ -148,37 +146,37 @@ export function ChatPanel({
         compact ? "h-full" : "rounded-pane shadow-pane"
       }`}
     >
-      {rooms.length > 1 ? (
-        <div className="flex items-center gap-1 px-3 pt-3 sm:px-4">
-          <div role="group" aria-label="Chat rooms" className="flex items-center gap-1">
-            {rooms.map((entry) => (
-              <button
-                key={entry.key}
-                type="button"
-                aria-pressed={entry.key === room}
-                onClick={() => selectRoom(entry.key)}
-                className={`rounded-full px-3 py-1 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                  entry.key === room
-                    ? "bg-white text-ink shadow-chip"
-                    : "text-ink/70 hover:bg-white/70 hover:text-ink"
-                }`}
-              >
-                {entry.label}
-              </button>
-            ))}
-          </div>
+      <div className="flex items-center gap-1 px-3 pt-3 sm:px-4">
+        <div role="group" aria-label="Chat rooms" className="flex w-full items-center gap-1 rounded-full bg-[#f8f6fc] p-1">
+          {rooms.map((entry) => (
+            <button
+              key={entry.key}
+              type="button"
+              aria-pressed={entry.key === room}
+              onClick={() => selectRoom(entry.key)}
+              className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                entry.key === room
+                  ? "bg-white text-ink shadow-chip"
+                  : "text-ink/70 hover:text-ink"
+              }`}
+            >
+              {entry.label}
+            </button>
+          ))}
         </div>
-      ) : null}
-
-      <div className="px-4 pb-1 pt-3">
-        <h2 className="text-[15px] font-medium tracking-tight text-ink">{activeRoom.label}</h2>
-        {compact ? null : (
-          <p className="mt-0.5 text-xs text-muted">{activeRoom.description}</p>
-        )}
       </div>
 
+      {compact ? (
+        <p className="px-4 pt-2 text-[11px] leading-relaxed text-muted">{activeRoom.description}</p>
+      ) : (
+        <div className="px-4 pb-1 pt-3">
+          <h2 className="text-[15px] font-medium tracking-tight text-ink">{activeRoom.label}</h2>
+          <p className="mt-0.5 text-xs text-muted">{activeRoom.description}</p>
+        </div>
+      )}
+
       {loadError ? (
-        <p role="alert" className="mx-3 rounded-2xl bg-peach/80 px-3 py-2 text-sm text-[#8c1d18]">
+        <p role="alert" className="mx-3 mt-2 rounded-2xl bg-peach/80 px-3 py-2 text-sm text-[#8c1d18]">
           {loadError}
         </p>
       ) : null}
@@ -188,7 +186,7 @@ export function ChatPanel({
         viewerUserId={viewerUserId}
         loading={loading}
         compact={compact}
-        emptyLabel={`No messages in ${activeRoom.label.toLowerCase()} yet. Start the conversation.`}
+        emptyLabel={`No messages in ${activeRoom.label.toLowerCase()} chat yet. Start the conversation.`}
       />
 
       <ChatComposer key={room} roomLabel={activeRoom.label.toLowerCase()} onSend={send} compact={compact} />
