@@ -1,3 +1,5 @@
+import type { CategorySlug } from "@/lib/ai/taxonomy";
+
 export const ACCESS_LEVEL = {
   GUEST: 10,
   REPORTER: 20,
@@ -17,6 +19,13 @@ export type Student = {
   skills: string[];
 };
 
+/** A category the categorizer assigned to a task; never entered by a student. */
+export type IssueCategory = {
+  slug: CategorySlug;
+  confidence: number;
+  evidence: string[];
+};
+
 export type Issue = {
   iid: number;
   title: string;
@@ -25,6 +34,7 @@ export type Issue = {
   labels: string[];
   assigneeGitlabUserIds: number[];
   webUrl: string;
+  categories: IssueCategory[];
 };
 
 export type ParticipationStat = {
