@@ -84,14 +84,14 @@ export function SkillsEditor({ initialSkills, suggestions = [] }: SkillsEditorPr
         {skills.map((skill) => (
           <span
             key={skill}
-            className="inline-flex items-center gap-1.5 rounded-full bg-lavender py-1 pl-3 pr-1.5 text-sm font-medium text-ink"
+            className="inline-flex items-center gap-1 rounded-full bg-lavender py-0.5 pl-2 pr-1 text-[11px] font-medium text-[#4a3c7a]"
           >
             {skill}
             <button
               type="button"
               onClick={() => removeSkill(skill)}
               aria-label={`Remove ${skill}`}
-              className="flex h-5 w-5 items-center justify-center rounded-full text-muted transition hover:bg-white hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink"
+              className="flex h-4 w-4 items-center justify-center rounded-full text-muted transition hover:bg-white hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink"
             >
               <span aria-hidden>&times;</span>
             </button>

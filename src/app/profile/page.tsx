@@ -20,14 +20,14 @@ export default async function ProfilePage() {
       <NavBar student={student} active="profile" />
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-3 p-3 lg:flex-row lg:items-start">
-        <Pane title="Currently saved" className="w-full lg:max-w-sm">
+        <Pane title="Currently saved" className="w-full lg:max-w-xs">
           <p className="text-sm leading-relaxed text-muted">
             TaskBuddy ranks open issues higher when their GitLab labels match what you list here.
           </p>
           {student.skills.length > 0 ? (
             <ul className="mt-4 flex flex-wrap gap-2">
               {student.skills.map((skill) => (
-                <li key={skill} className="rounded-full bg-lavender px-3 py-1 text-sm font-medium">
+                <li key={skill} className="rounded-full bg-lavender px-2 py-0.5 text-[11px] font-medium text-[#4a3c7a]">
                   {skill}
                 </li>
               ))}

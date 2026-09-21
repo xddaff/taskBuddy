@@ -7,9 +7,25 @@ import { ParticipationMeter } from "@/components/ParticipationMeter";
 import { issuesByIid, loadClassPlan } from "@/lib/plan-service";
 import { recommendationsForStudent } from "@/lib/recommender";
 import { getCurrentStudent } from "@/lib/session";
-import { isMaintainer } from "@/lib/types";
+import { isMaintainer, type ClassPlan, type ParticipationStat } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+function emptyRecommendationCopy(
+  plan: ClassPlan,
+  stat: ParticipationStat | null,
+): string {
+  if (!stat) {
+    return "Instructors are not part of the recommendation pool. Open the class view to track students.";
+  }
+  if (stat.meetsTarget) {
+    return `Nothing left to recommend: you already have ${stat.currentCount} of ${stat.totalIssues} issues, which meets the ${plan.minParticipationPct}% minimum.`;
+  }
+  if (plan.warning) {
+    return `No issues were left for you after filling larger participation gaps. ${plan.warning}`;
+  }
+  return "There are no open, unassigned issues left to recommend right now. Sync from GitLab to pull in new ones.";
+}
 
 export default async function DashboardPage() {
   const student = await getCurrentStudent();
@@ -33,8 +49,8 @@ export default async function DashboardPage() {
     <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
       <NavBar student={student} active="dashboard" />
 
-      <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(16rem,24%)_minmax(0,1fr)_minmax(16rem,26%)] lg:grid-rows-1">
-        <div className="flex min-h-0 flex-col gap-3">
+      <main className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(13rem,18%)_minmax(0,1fr)_minmax(16rem,24%)] lg:grid-rows-1">
+        <div className="flex min-h-0 flex-col gap-3 lg:min-h-0">
           {stat ? (
             <div className="rounded-pane bg-paper p-4 shadow-pane">
               <ParticipationMeter stat={stat} minParticipationPct={config.minParticipationPct} />
@@ -56,39 +72,36 @@ export default async function DashboardPage() {
             </Pane>
           )}
 
-          <Pane
-            title="Your skills"
-            className="min-h-[12rem] flex-1"
-            actions={
+          <section className="shrink-0 rounded-pane bg-paper px-4 py-3 shadow-pane">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xs font-medium tracking-tight text-ink">Skills</h2>
               <Link
                 href="/profile"
-                className="rounded-full px-2 py-1 text-sm font-medium text-muted hover:bg-black/[0.04] hover:text-ink"
+                className="rounded-full px-2 py-0.5 text-[11px] font-medium text-muted hover:bg-black/[0.04] hover:text-ink"
               >
                 Edit
               </Link>
-            }
-          >
+            </div>
             {student.skills.length > 0 ? (
-              <ul className="flex flex-wrap gap-2">
+              <ul className="mt-2 flex flex-wrap gap-1">
                 {student.skills.map((skill) => (
                   <li
                     key={skill}
-                    className="rounded-full bg-lavender px-3 py-1 text-sm font-medium"
+                    className="rounded-full bg-lavender px-2 py-0.5 text-[11px] font-medium text-[#4a3c7a]"
                   >
                     {skill}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm leading-relaxed text-muted">
-                You have not listed any skills yet.{" "}
-                <Link href="/profile" className="font-medium text-ink underline underline-offset-4">
-                  Add them
-                </Link>{" "}
-                for better recommendations.
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                None yet.{" "}
+                <Link href="/profile" className="font-medium text-ink underline underline-offset-2">
+                  Add skills
+                </Link>
               </p>
             )}
-          </Pane>
+          </section>
         </div>
 
         <Pane title="Recommended for you" className="min-h-[24rem] lg:min-h-0">
@@ -110,10 +123,7 @@ export default async function DashboardPage() {
             </ul>
           ) : (
             <p className="rounded-2xl bg-[#f8f6fc] px-4 py-8 text-center text-sm text-muted">
-              {plan.warning ??
-                (stat?.meetsTarget
-                  ? "Nothing left to recommend: you have already met the participation minimum."
-                  : "There are no open issues left to recommend right now. Sync from GitLab to pull in new ones.")}
+              {emptyRecommendationCopy(plan, stat)}
             </p>
           )}
         </Pane>
