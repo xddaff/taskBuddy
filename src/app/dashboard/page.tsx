@@ -34,9 +34,7 @@ export default async function DashboardPage() {
 
       <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Hi, {student.name.split(" ")[0]}
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{student.name}</h1>
           <p className="mt-1 text-sm text-muted">
             {student.skills.length > 0 ? (
               <>Matching issues against your skills: {student.skills.join(", ")}.</>

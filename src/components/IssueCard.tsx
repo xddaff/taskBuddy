@@ -14,7 +14,13 @@ type IssueCardProps = {
   assigned?: boolean;
 };
 
-export function IssueCard({ issue, reason, rank, claimable = false, assigned = false }: IssueCardProps) {
+export function IssueCard({
+  issue,
+  reason,
+  rank,
+  claimable = false,
+  assigned = false,
+}: IssueCardProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [claiming, setClaiming] = useState(false);

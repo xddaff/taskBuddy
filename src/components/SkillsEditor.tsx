@@ -51,7 +51,8 @@ export function SkillsEditor({ initialSkills, suggestions = [] }: SkillsEditorPr
     setSaving(true);
     // A skill left in the input has not been turned into a chip yet; saving should keep it.
     const pendingDraft = normalize(draft);
-    const payload = pendingDraft && !skills.includes(pendingDraft) ? [...skills, pendingDraft] : skills;
+    const payload =
+      pendingDraft && !skills.includes(pendingDraft) ? [...skills, pendingDraft] : skills;
     try {
       await postJson("/api/profile", { skills: payload });
       setSkills(payload);
